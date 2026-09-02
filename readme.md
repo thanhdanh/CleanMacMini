@@ -41,8 +41,8 @@ Stopping a process can cause unsaved work to be lost. Try a normal quit first an
 ### Swift Package Manager
 
 ```bash
-git clone https://github.com/thanhdanh/PulseBar.git
-cd PulseBar
+git clone https://github.com/thanhdanh/CleanMacMini.git
+cd CleanMacMini
 swift run PulseBar
 ```
 
