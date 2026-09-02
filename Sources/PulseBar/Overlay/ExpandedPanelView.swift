@@ -1,6 +1,15 @@
 import AppKit
 import SwiftUI
 
+private enum ProcessTableLayout {
+    static let spacing: CGFloat = 8
+    static let horizontalPadding: CGFloat = 5
+    static let iconWidth: CGFloat = 22
+    static let cpuWidth: CGFloat = 54
+    static let memoryWidth: CGFloat = 82
+    static let actionWidth: CGFloat = 24
+}
+
 struct ExpandedPanelView: View {
     @ObservedObject var state: AppState
     var onDragChange: (() -> Void)?
@@ -69,41 +78,44 @@ private struct ProcessesView: View {
                 .frame(width: 105)
             }
 
-            HStack {
+            HStack(spacing: ProcessTableLayout.spacing) {
+                Color.clear
+                    .frame(width: ProcessTableLayout.iconWidth, height: 1)
                 Text("Process")
-                    .padding(.leading, 30)
-                Spacer()
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 Text("CPU")
-                    .frame(width: 48, alignment: .trailing)
+                    .frame(width: ProcessTableLayout.cpuWidth, alignment: .trailing)
                 Text("Memory")
-                    .frame(width: 72, alignment: .trailing)
-                Color.clear.frame(width: 28, height: 1)
+                    .frame(width: ProcessTableLayout.memoryWidth, alignment: .trailing)
+                Color.clear
+                    .frame(width: ProcessTableLayout.actionWidth, height: 1)
             }
             .font(.caption)
             .foregroundStyle(.secondary)
-            .padding(.horizontal, 5)
+            .padding(.horizontal, ProcessTableLayout.horizontalPadding)
             .padding(.vertical, 5)
             .background(.white.opacity(0.045), in: RoundedRectangle(cornerRadius: 7))
 
-            ScrollView {
-                LazyVStack(spacing: 2) {
-                    ForEach(service.items) { item in
-                        ProcessRow(item: item) { force in
-                            errorMessage = service.quit(item, force: force)
+            GeometryReader { viewport in
+                ScrollView {
+                    LazyVStack(spacing: 2) {
+                        ForEach(service.items) { item in
+                            ProcessRow(item: item) { force in
+                                errorMessage = service.quit(item, force: force)
+                            }
                         }
                     }
+                    .frame(width: viewport.size.width, alignment: .top)
                 }
-                .frame(maxWidth: .infinity, alignment: .top)
-            }
-            .defaultScrollAnchor(.top)
-            .frame(maxHeight: .infinity, alignment: .top)
-            .overlay {
-                if service.items.isEmpty {
-                    ContentUnavailableView(
-                        "No Processes",
-                        systemImage: "list.bullet.rectangle",
-                        description: Text("Process activity will appear here shortly.")
-                    )
+                .defaultScrollAnchor(.top)
+                .overlay {
+                    if service.items.isEmpty {
+                        ContentUnavailableView(
+                            "No Processes",
+                            systemImage: "list.bullet.rectangle",
+                            description: Text("Process activity will appear here shortly.")
+                        )
+                    }
                 }
             }
         }
@@ -124,7 +136,7 @@ private struct ProcessRow: View {
     let stop: (Bool) -> Void
 
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: ProcessTableLayout.spacing) {
             Group {
                 if let icon = item.icon {
                     Image(nsImage: icon)
@@ -137,7 +149,7 @@ private struct ProcessRow: View {
                         .foregroundStyle(.secondary)
                 }
             }
-            .frame(width: 22, height: 22)
+            .frame(width: ProcessTableLayout.iconWidth, height: ProcessTableLayout.iconWidth)
 
             VStack(alignment: .leading, spacing: 1) {
                 Text(item.name)
@@ -147,23 +159,23 @@ private struct ProcessRow: View {
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
             }
-
-            Spacer(minLength: 4)
+            .frame(maxWidth: .infinity, alignment: .leading)
 
             Text(String(format: "%.1f%%", item.cpuPercent))
                 .monospacedDigit()
-                .frame(width: 48, alignment: .trailing)
+                .frame(width: ProcessTableLayout.cpuWidth, alignment: .trailing)
             Text(ByteFormat.string(item.memoryBytes))
                 .monospacedDigit()
-                .frame(width: 72, alignment: .trailing)
+                .frame(width: ProcessTableLayout.memoryWidth, alignment: .trailing)
 
             Menu {
                 Button("Quit") { stop(false) }
                 Button("Force Stop", role: .destructive) { stop(true) }
             } label: {
                 Image(systemName: "ellipsis.circle")
-                    .frame(width: 24, height: 24)
+                    .frame(width: ProcessTableLayout.actionWidth, height: ProcessTableLayout.actionWidth)
             }
+            .frame(width: ProcessTableLayout.actionWidth)
             .menuStyle(.borderlessButton)
             .menuIndicator(.hidden)
             .disabled(item.isProtected)
@@ -171,7 +183,7 @@ private struct ProcessRow: View {
         }
         .font(.system(size: 11))
         .padding(.vertical, 4)
-        .padding(.horizontal, 5)
+        .padding(.horizontal, ProcessTableLayout.horizontalPadding)
         .background(.white.opacity(0.045), in: RoundedRectangle(cornerRadius: 7))
     }
 }
