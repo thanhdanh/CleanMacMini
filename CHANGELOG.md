@@ -9,8 +9,18 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ### Planned
 
-- Complete the expanded Processes, Memory, and Clean views.
 - Add packaging, signing, notarization, and release automation.
+
+## [0.2.0] - 2026-09-02
+
+### Added
+
+- Compact CPU and memory status chip.
+- Expanded Processes, Memory, and Clean interface.
+
+### Changed
+
+- Corrected the executable entry point for Swift Package Manager builds.
 
 ## [0.1.0] - 2026-09-02
 
@@ -25,5 +35,6 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 - Login item management.
 - Project documentation and source-build instructions.
 
-[Unreleased]: https://github.com/thanhdanh/CleanMacMini/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/thanhdanh/CleanMacMini/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/thanhdanh/CleanMacMini/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/thanhdanh/CleanMacMini/releases/tag/v0.1.0

@@ -7,7 +7,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     let state = AppState()
     private var overlay: OverlayPanelController?
-    private var screenObserver: NSObjectProtocol?
+    private var screenObserver: (any NSObjectProtocol)?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         overlay = OverlayPanelController(state: state)

@@ -38,13 +38,13 @@ final class DiskCleanerService: ObservableObject {
         lastMessage = nil
         refreshVolumeStats()
         let threshold = UInt64(max(20, largeFileThresholdMB)) * 1_048_576
-        scanTask = Task.detached(priority: .utility) { [weak self] in
-            let result = DiskScanner.scan(largeFileMinBytes: threshold)
-            await MainActor.run {
-                guard let self, !Task.isCancelled else { return }
-                self.categories = result
-                self.isScanning = false
-            }
+        scanTask = Task { [weak self] in
+            let result = await Task.detached(priority: .utility) {
+                DiskScanner.scan(largeFileMinBytes: threshold)
+            }.value
+            guard let self, !Task.isCancelled else { return }
+            self.categories = result
+            self.isScanning = false
         }
     }
 
@@ -90,7 +90,7 @@ enum DiskScanner {
         categories.append(folderCategory(id: "trash", title: "Trash", subtitle: "Move items out of Trash permanently", symbol: "trash", url: trash, selected: false))
 
         if FileManager.default.fileExists(atPath: derived.path) {
-            var derivedCat = folderCategory(id: "derived", title: "Xcode DerivedData", subtitle: "Optional developer junk", symbol: "hammer", url: derived, selected: false)
+            let derivedCat = folderCategory(id: "derived", title: "Xcode DerivedData", subtitle: "Optional developer junk", symbol: "hammer", url: derived, selected: false)
             categories.append(derivedCat)
         }
 
