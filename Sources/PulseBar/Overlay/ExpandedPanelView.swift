@@ -77,10 +77,13 @@ private struct ProcessesView: View {
                     .frame(width: 48, alignment: .trailing)
                 Text("Memory")
                     .frame(width: 72, alignment: .trailing)
-                Color.clear.frame(width: 28)
+                Color.clear.frame(width: 28, height: 1)
             }
             .font(.caption)
             .foregroundStyle(.secondary)
+            .padding(.horizontal, 5)
+            .padding(.vertical, 5)
+            .background(.white.opacity(0.045), in: RoundedRectangle(cornerRadius: 7))
 
             ScrollView {
                 LazyVStack(spacing: 2) {
