@@ -1,49 +1,60 @@
 # PulseBar
 
-PulseBar is a lightweight macOS system monitor that keeps CPU and memory information visible without taking over your desktop. It lives as a small, transparent overlay in the bottom-left corner of the screen and expands into a simple control panel when clicked.
+PulseBar is a lightweight, native macOS system monitor for keeping CPU and memory activity visible without taking over the desktop. Its translucent compact bar sits near the top-right of the active display and expands downward into a focused resource-control panel.
 
-The project takes inspiration from the convenience of tools such as CleanMyMac, while focusing on an always-available, low-overhead view of system performance. PulseBar is an independent project and is not affiliated with MacPaw.
+PulseBar takes inspiration from the convenience of utilities such as CleanMyMac while remaining an independent, on-device project that is not affiliated with MacPaw.
 
-> **Project status:** Early-stage prototype. The monitoring and maintenance services are in place, while parts of the expanded user interface are still under development.
+<p align="center">
+  <img src="docs/images/pulsebar-compact.png" alt="PulseBar compact CPU and RAM monitor" width="466">
+</p>
+
+## Product tour
+
+| Processes | Memory |
+| --- | --- |
+| <img src="docs/images/pulsebar-processes.png" alt="Grouped process usage and CPU history" width="370"> | <img src="docs/images/pulsebar-memory.png" alt="RAM history and memory relief" width="370"> |
+
+<p align="center">
+  <img src="docs/images/pulsebar-settings.png" alt="PulseBar refresh interval and appearance settings" width="370">
+</p>
 
 ## Features
 
-- **At-a-glance monitoring** — See live CPU usage, CPU percentage, memory usage, and memory pressure from a compact overlay.
-- **Always within reach** — The floating panel is pinned to the bottom-left corner, stays available across Spaces and full-screen apps, and can be dragged elsewhere.
-- **Process inspector** — Expand PulseBar to view the apps and background services using the most CPU or memory. Helper processes are grouped into their owning application.
-- **Search and sorting** — Find a process by name or PID and sort the list by resource usage.
-- **Performance history** — Explore a rolling five-minute CPU chart in Processes and RAM chart in Memory.
-- **Process control** — Quit or force-stop an unresponsive process directly from the panel. Critical macOS processes and PulseBar itself are protected.
-- **Memory relief** — Close selected applications, clear URL cache data, and optionally ask macOS to purge inactive memory.
-- **Disk cleanup** — Scan user caches, logs, Trash, Xcode DerivedData, and large files before choosing what to remove.
-- **Open at login** — Keep PulseBar ready after signing in to your Mac.
-- **Lightweight by design** — Native Swift, SwiftUI, and AppKit with adaptive sampling intervals and slower updates while Low Power Mode is enabled.
-- **Configurable updates** — Choose separate refresh intervals for system metrics and the process list; Low Power Mode keeps sampling at two seconds or slower.
-- **Customizable appearance** — Select Ocean, Aurora, Sunset, or Graphite gradients and adjust the tint strength over the native translucent material.
-- **Native macOS appearance** — A compact layout, rounded corners, background blur, and subtle animations help the overlay blend into the desktop.
+- **At-a-glance monitoring** — View live CPU percentage, RAM use, and memory pressure from the compact overlay.
+- **Top-edge placement** — Keep the bar close to the macOS menu bar, available across Spaces and full-screen apps, or drag it elsewhere.
+- **Process inspector** — Inspect apps and background services by CPU or memory; related helper processes are grouped under their owning app.
+- **Search and control** — Search by process name or PID, then quit or force-stop allowed processes. PulseBar and critical macOS processes are protected.
+- **Performance history** — View a rolling five-minute CPU chart in Processes and RAM chart in Memory.
+- **Memory relief** — Review the largest apps, close selected applications, clear URL cache data, and optionally ask macOS to purge inactive memory.
+- **Disk cleanup** — Scan caches, logs, Trash, Xcode DerivedData, and large files before choosing exactly what to remove.
+- **Configurable behavior** — Choose independent system and process refresh intervals, with slower sampling during Low Power Mode.
+- **Custom appearance** — Select Ocean, Aurora, Sunset, or Graphite gradients and adjust the tint over native macOS blur.
+- **Open at Login** — Start the signed app automatically after signing in.
 
-## How to use PulseBar
+## Install
 
-1. Launch PulseBar. The compact monitor appears near the bottom-left corner of the active display.
-2. Read the live CPU and memory values directly from the compact view.
-3. Click the monitor to open the expanded panel.
-4. Use **Processes** to inspect high-usage apps and services, search by name or PID, and quit a process when needed.
-5. Read CPU history at the top of **Processes** and RAM history inside **Memory**.
-6. Use **Memory** to select applications to close and request memory relief.
-7. Use **Clean** to scan removable files, review the categories and sizes, then clean only the items you select.
-8. Select the gear button to configure refresh intervals, gradient palette, and tint strength.
-9. Drag either the compact monitor or the wide handle at the top of the expanded panel to reposition it. Right-click the monitor to enable **Open at Login**, reset it to the bottom-left corner, or quit PulseBar. From the bottom-left position, the panel expands upward so the monitor stays in place.
+1. Download `PulseBar-1.0.0.zip` from the [latest GitHub Release](https://github.com/thanhdanh/CleanMacMini/releases/latest).
+2. Extract `PulseBar.app` and move it to `/Applications`.
+3. Open PulseBar. Because release builds are Developer ID signed and notarized, macOS can verify the app before launch.
 
-Stopping a process can cause unsaved work to be lost. Try a normal quit first and use force stop only when an app is unresponsive. Review cleanup selections carefully because removed files are not guaranteed to be recoverable.
+PulseBar requires macOS 14 Sonoma or later.
 
-## Run from source
+## How to use
 
-### Requirements
+1. Launch PulseBar; the compact monitor appears near the top-right of the active display.
+2. Click the monitor to expand the panel downward.
+3. Use **Processes** to inspect grouped apps and services, search, sort, or stop an allowed process.
+4. Use **Memory** to review RAM history and select applications for memory relief.
+5. Use **Clean** to scan removable files, review every category, and clean only selected items.
+6. Open the gear menu to configure refresh intervals, gradient palette, and tint strength.
+7. Drag the compact monitor or the handle at the top of the expanded panel to reposition PulseBar.
+8. Right-click the monitor to enable **Open at Login**, reset its position, or quit.
 
-- macOS 14 Sonoma or later
-- Xcode 15 or later, or Swift 5.9 or later
+Stopping a process can discard unsaved work. Try a normal quit first and force-stop only an unresponsive app. Review cleanup selections carefully because removed files may not be recoverable.
 
-### Swift Package Manager
+## Build from source
+
+Requirements: macOS 14 or later and Xcode 15/Swift 5.9 or later.
 
 ```bash
 git clone https://github.com/thanhdanh/CleanMacMini.git
@@ -51,61 +62,45 @@ cd CleanMacMini
 swift run PulseBar
 ```
 
-You can also open `Package.swift` in Xcode, select the **PulseBar** scheme, and press **Run**.
+You can also open `Package.swift` in Xcode, select the **PulseBar** scheme, and run it. Open at Login is intended for a signed `.app` bundle and may not persist when PulseBar is run as a Swift package executable.
 
-The login item integration requires PulseBar to be distributed and launched as a properly signed `.app` bundle. It may not persist when the project is run as a command-line Swift package executable.
+To create a local `.app` and ZIP archive:
 
-### Docker
+```bash
+./scripts/package-app.sh
+```
 
-PulseBar cannot be built or run as a macOS app in a standard Docker container. Docker Desktop runs Linux containers, while PulseBar depends on macOS-only frameworks (`AppKit`, `SwiftUI`, and `ServiceManagement`), the macOS SDK, and the macOS window server.
+The local script uses ad-hoc signing unless `SIGN_IDENTITY` names an installed Developer ID Application certificate. Official releases are built as universal binaries, signed with the hardened runtime, notarized by Apple, stapled, and uploaded by [the release workflow](.github/workflows/release.yml).
 
-If you do not want to install Swift locally, use a macOS CI runner such as GitHub Actions to build and package the app, then download the resulting `.app` artifact and run it on a Mac. Code signing and notarization additionally require an Apple Developer identity and credentials. Docker can still be useful for portable tooling around the repository, but not for compiling or displaying PulseBar itself.
+The release workflow requires these GitHub Actions secrets:
 
-## Versioning and releases
+- `APPLE_DEVELOPER_ID_CERTIFICATE_P12` — base64-encoded Developer ID Application certificate and private key.
+- `APPLE_DEVELOPER_ID_CERTIFICATE_PASSWORD` — password for the `.p12` file.
+- `APPLE_ID` — Apple Developer account email.
+- `APPLE_TEAM_ID` — Apple Developer Team ID.
+- `APPLE_APP_SPECIFIC_PASSWORD` — app-specific password used by the notary service.
 
-PulseBar follows [Semantic Versioning](https://semver.org/):
+## Versioning
 
-- **Major** versions contain incompatible changes.
-- **Minor** versions add backward-compatible features.
-- **Patch** versions contain backward-compatible fixes.
-
-The current version is stored in `VERSION` and the app bundle version is stored in `Resources/Info.plist`. Release changes are recorded in `CHANGELOG.md`, and Git tags use the `vMAJOR.MINOR.PATCH` format, such as `v0.1.0`.
-
-For each release:
-
-1. Move completed entries from **Unreleased** into a dated version section in `CHANGELOG.md`.
-2. Update `VERSION` and `CFBundleShortVersionString` in `Resources/Info.plist`.
-3. Commit the release, create the matching Git tag, and publish a GitHub Release.
+PulseBar follows Semantic Versioning. The release version is stored in `VERSION` and `Resources/Info.plist`, release notes live in `CHANGELOG.md`, and release tags use the `vMAJOR.MINOR.PATCH` format. The first public release is `v1.0.0`.
 
 ## Privacy and permissions
 
-PulseBar reads local system metrics and process information on your Mac. It does not need an account and is designed to keep this information on-device.
+PulseBar reads system metrics, process information, and user-selected cleanup locations locally. It does not require an account or transmit this information.
 
-Some operations are intentionally limited by macOS:
-
-- PulseBar can stop only processes allowed by the current user's permissions.
+- PulseBar can stop only processes permitted by the current macOS user.
 - Protected system processes cannot be stopped from the app.
-- Purging inactive memory can show a macOS administrator prompt.
+- Purging inactive memory can show an administrator prompt.
 - Files outside accessible user folders may require additional macOS permissions.
 
-Memory relief is not a replacement for macOS memory management. macOS uses available RAM for useful caches, so a lower “used memory” value is not always faster or healthier. PulseBar reports the observed result and lets the operating system remain in control.
+Memory relief is not a replacement for macOS memory management. macOS intentionally uses available RAM for useful caches, so lower used memory does not always mean better performance.
 
 ## Project structure
 
 ```text
-Sources/PulseBar/
-├── Models/       System metrics, processes, disk categories, and formatting
-├── Overlay/      Floating panel positioning and SwiftUI root view
-├── Services/     Metrics, process, memory, disk, and login-item services
-├── AppDelegate.swift
-└── PulseBarEntry.swift
+Sources/PulseBar/   Application source
+Resources/          Bundle metadata
+docs/images/        Product screenshots
+scripts/            Packaging and notarization tools
+.github/workflows/  Signed release automation
 ```
-
-## Roadmap
-
-- Continue polishing the expanded Processes, Memory, and Clean views
-- Improve multi-display positioning and saved placement
-- Package, sign, notarize, and distribute PulseBar as a macOS app
-- Add automated tests for samplers and cleanup safety rules
-
-Contributions and feedback are welcome while PulseBar takes shape.

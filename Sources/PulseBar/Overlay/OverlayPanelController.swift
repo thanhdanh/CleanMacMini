@@ -74,30 +74,33 @@ final class OverlayPanelController: NSObject {
     func pinToDefaultPositionIfNeeded() {
         guard !state.userMovedOverlay else { return }
         guard let screen = panel.screen ?? NSScreen.main ?? NSScreen.screens.first else { return }
-        let visible = screen.visibleFrame
-        let origin = NSPoint(
-            x: visible.minX + 14,
-            y: visible.minY + 10
-        )
         performProgrammaticMove {
-            panel.setFrameOrigin(origin)
+            panel.setFrameOrigin(topRightOrigin(for: panel.frame.size, on: screen))
         }
     }
 
     private func applyContentSize(_ size: NSSize) {
         let padded = NSSize(width: max(320, ceil(size.width)), height: max(40, ceil(size.height)))
         var frame = panel.frame
+        let top = frame.maxY
+        let right = frame.maxX
         frame.size = padded
-        if !state.userMovedOverlay, let screen = panel.screen ?? NSScreen.main {
-            let visible = screen.visibleFrame
-            frame.origin = NSPoint(
-                x: visible.minX + 14,
-                y: visible.minY + 10
-            )
+        if state.userMovedOverlay {
+            frame.origin = NSPoint(x: right - padded.width, y: top - padded.height)
+        } else if let screen = panel.screen ?? NSScreen.main {
+            frame.origin = topRightOrigin(for: padded, on: screen)
         }
         performProgrammaticMove {
             panel.setFrame(frame, display: true)
         }
+    }
+
+    private func topRightOrigin(for size: NSSize, on screen: NSScreen) -> NSPoint {
+        let visible = screen.visibleFrame
+        return NSPoint(
+            x: visible.maxX - size.width - 14,
+            y: visible.maxY - size.height - 4
+        )
     }
 
     private func movePanelToMouse() {

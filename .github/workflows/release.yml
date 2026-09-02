@@ -1,0 +1,71 @@
+name: Release notarized macOS app
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-14
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Validate tag and project version
+        shell: bash
+        run: |
+          test "${GITHUB_REF_NAME#v}" = "$(tr -d '[:space:]' < VERSION)"
+
+      - name: Import Developer ID certificate
+        id: signing
+        shell: bash
+        env:
+          CERTIFICATE_P12: ${{ secrets.APPLE_DEVELOPER_ID_CERTIFICATE_P12 }}
+          CERTIFICATE_PASSWORD: ${{ secrets.APPLE_DEVELOPER_ID_CERTIFICATE_PASSWORD }}
+        run: |
+          test -n "$CERTIFICATE_P12"
+          CERTIFICATE_PATH="$RUNNER_TEMP/developer-id.p12"
+          KEYCHAIN_PATH="$RUNNER_TEMP/pulsebar-signing.keychain-db"
+          KEYCHAIN_PASSWORD="pulsebar-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+
+          echo "$CERTIFICATE_P12" | base64 --decode > "$CERTIFICATE_PATH"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security import "$CERTIFICATE_PATH" -P "$CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security list-keychain -d user -s "$KEYCHAIN_PATH"
+
+          IDENTITY="$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" | sed -n 's/.*"\(Developer ID Application:.*\)"/\1/p' | head -n 1)"
+          test -n "$IDENTITY"
+          echo "identity=$IDENTITY" >> "$GITHUB_OUTPUT"
+
+      - name: Build and sign universal app
+        shell: bash
+        env:
+          ARCHS: arm64 x86_64
+          SIGN_IDENTITY: ${{ steps.signing.outputs.identity }}
+        run: ./scripts/package-app.sh
+
+      - name: Notarize and staple app
+        shell: bash
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+        run: ./scripts/notarize-app.sh
+
+      - name: Publish GitHub Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" "dist/PulseBar-${GITHUB_REF_NAME#v}.zip" \
+            --title "PulseBar ${GITHUB_REF_NAME#v}" \
+            --notes-file CHANGELOG.md \
+            --verify-tag
