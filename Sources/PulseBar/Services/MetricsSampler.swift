@@ -3,6 +3,7 @@ import Foundation
 
 actor MetricsSampler {
     private var previousCPU: host_cpu_load_info?
+    private let temperatureSampler = TemperatureSampler()
     private let pageSize: UInt64 = {
         var size = vm_size_t(0)
         host_page_size(mach_host_self(), &size)
@@ -13,7 +14,9 @@ actor MetricsSampler {
         var metrics = SystemMetrics()
         metrics.memoryTotalBytes = ProcessInfo.processInfo.physicalMemory
         metrics.cpuPercent = sampleCPU()
+        metrics.deviceTemperatureCelsius = temperatureSampler.sample()
         sampleMemory(&metrics)
+        sampleSwap(&metrics)
         return metrics
     }
 
@@ -60,7 +63,9 @@ actor MetricsSampler {
         metrics.compressorBytes = compressed * ps
         metrics.purgeableBytes = purgeable * ps
         metrics.inactiveBytes = UInt64(stats.inactive_count) * ps
+        metrics.externalBytes = UInt64(stats.external_page_count) * ps
         metrics.freeBytes = UInt64(stats.free_count) * ps
+        metrics.appMemoryBytes = appPages * ps
         metrics.memoryUsedBytes = min(metrics.memoryTotalBytes, (appPages + wired + compressed) * ps)
 
         let ratio = metrics.memoryUsedRatio
@@ -71,5 +76,12 @@ actor MetricsSampler {
         } else {
             metrics.pressure = .normal
         }
+    }
+
+    private func sampleSwap(_ metrics: inout SystemMetrics) {
+        var usage = xsw_usage()
+        var size = MemoryLayout<xsw_usage>.size
+        guard sysctlbyname("vm.swapusage", &usage, &size, nil, 0) == 0 else { return }
+        metrics.swapUsedBytes = usage.xsu_used
     }
 }

@@ -8,7 +8,7 @@ final class MemoryReliefService: ObservableObject {
     @Published private(set) var lastMessage: String?
     @Published private(set) var lastFreedBytes: UInt64 = 0
 
-    func relieve(metrics: SystemMetrics, quitApps: [ProcessInfoItem]) async {
+    func freeUp(metrics: SystemMetrics, quitApps: [ProcessInfoItem]) async {
         guard !isWorking else { return }
         isWorking = true
         lastMessage = nil
@@ -35,12 +35,12 @@ final class MemoryReliefService: ObservableObject {
 
         if purged {
             lastMessage = freed > 0
-                ? "Inactive memory purged. About \(ByteFormat.string(freed)) looks free now. macOS may recache files."
-                : "Purge ran. Used RAM may not drop much — the system often keeps useful cache."
+                ? "Freed about \(ByteFormat.string(freed)). macOS may reuse some of it for helpful caches."
+                : "Memory was optimized. The used total may stay similar while macOS keeps helpful caches."
         } else {
             lastMessage = freed > 0
-                ? "Closed selected apps. About \(ByteFormat.string(freed)) looks free now."
-                : "Did not run purge (admin cancelled or command missing). Quit apps above to reclaim RAM."
+                ? "Closed the selected apps and freed about \(ByteFormat.string(freed))."
+                : "Memory cleanup was cancelled or isn't available on this Mac."
         }
         isWorking = false
     }

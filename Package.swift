@@ -13,6 +13,9 @@ let package = Package(
             path: "Sources/PulseBar",
             swiftSettings: [
                 .enableUpcomingFeature("ExistentialAny")
+            ],
+            linkerSettings: [
+                .linkedFramework("IOKit")
             ]
         )
     ]

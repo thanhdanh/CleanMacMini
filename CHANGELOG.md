@@ -3,7 +3,7 @@
 All notable changes to PulseBar are documented in this file. PulseBar follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.0] - 2026-09-02
+## [1.0.0] - 2026-09-03
 
 ### Added
 
@@ -12,6 +12,10 @@ All notable changes to PulseBar are documented in this file. PulseBar follows
 - Live CPU and memory sampling with rolling five-minute history charts.
 - Grouped application processes, background-service visibility, search, resource sorting, and protected quit or force-stop actions.
 - Memory pressure, reclaimable-memory estimates, application memory totals, and selected-app memory relief.
+- A Free Up memory action with an at-a-glance reclaimable-memory estimate.
+- Detailed app, wired, compressed, cached, swap, and free memory readings.
+- A longer top-consumers list covering both applications and background processes.
+- Device temperature in the compact view, with graceful fallback when a Mac does not expose a compatible sensor.
 - Disk cleanup scanning for user caches, logs, Trash, Xcode DerivedData, and large files.
 - Configurable metric and process refresh intervals with Low Power Mode-aware sampling.
 - Drag repositioning in compact and expanded modes, reset positioning, and Open at Login support.

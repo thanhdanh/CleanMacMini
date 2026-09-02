@@ -7,6 +7,7 @@ import Foundation
 final class ProcessService: ObservableObject {
     @Published private(set) var items: [ProcessInfoItem] = []
     @Published private(set) var applications: [ProcessInfoItem] = []
+    @Published private(set) var memoryConsumers: [ProcessInfoItem] = []
     @Published var sort: ProcessSort = .cpu {
         didSet { Task { await refresh() } }
     }
@@ -156,6 +157,11 @@ final class ProcessService: ObservableObject {
                 )
             )
         }
+
+        memoryConsumers = Array(grouped.sorted {
+            if $0.memoryBytes == $1.memoryBytes { return $0.name < $1.name }
+            return $0.memoryBytes > $1.memoryBytes
+        }.prefix(24))
 
         if !query.isEmpty {
             grouped.removeAll {

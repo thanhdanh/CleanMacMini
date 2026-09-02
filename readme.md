@@ -5,14 +5,14 @@ PulseBar is a lightweight, native macOS system monitor for keeping CPU and memor
 PulseBar takes inspiration from the convenience of utilities such as CleanMyMac while remaining an independent, on-device project that is not affiliated with MacPaw.
 
 <p align="center">
-  <img src="docs/images/pulsebar-compact.png" alt="PulseBar compact CPU monitor with RAM usage ring and used/total value" width="536">
+  <img src="docs/images/pulsebar-compact.png" alt="PulseBar compact monitor showing CPU, RAM usage, and device temperature" width="536">
 </p>
 
 ## Product tour
 
 | Processes | Memory |
 | --- | --- |
-| <img src="docs/images/pulsebar-processes.png" alt="Grouped process usage and CPU history" width="370"> | <img src="docs/images/pulsebar-memory.png" alt="RAM history and memory relief" width="370"> |
+| <img src="docs/images/pulsebar-processes.png" alt="Grouped process usage and CPU history" width="370"> | <img src="docs/images/pulsebar-memory.png" alt="Detailed RAM breakdown, top consumers, and Free Up action" width="370"> |
 
 <p align="center">
   <img src="docs/images/pulsebar-settings.png" alt="PulseBar refresh interval and appearance settings" width="370">
@@ -20,12 +20,12 @@ PulseBar takes inspiration from the convenience of utilities such as CleanMyMac 
 
 ## Features
 
-- **At-a-glance monitoring** — View live CPU percentage, RAM use, and memory pressure from the compact overlay.
+- **At-a-glance monitoring** — View live CPU percentage, RAM use, memory pressure, and device temperature from the compact overlay.
 - **Top-edge placement** — Keep the bar close to the macOS menu bar, available across Spaces and full-screen apps, or drag it elsewhere.
 - **Process inspector** — Inspect apps and background services by CPU or memory; related helper processes are grouped under their owning app.
 - **Search and control** — Search by process name or PID, then quit or force-stop allowed processes. PulseBar and critical macOS processes are protected.
 - **Performance history** — View a rolling five-minute CPU chart in Processes and RAM chart in Memory.
-- **Memory relief** — Review the largest apps, close selected applications, clear URL cache data, and optionally ask macOS to purge inactive memory.
+- **Memory insights and relief** — Review app, wired, compressed, cached, swap, and free memory; inspect top app and background-process consumers; close selected applications; and ask macOS to free reclaimable memory.
 - **Disk cleanup** — Scan caches, logs, Trash, Xcode DerivedData, and large files before choosing exactly what to remove.
 - **Configurable behavior** — Choose independent system and process refresh intervals, with slower sampling during Low Power Mode.
 - **Custom appearance** — Select Ocean, Aurora, Sunset, or Graphite gradients and adjust the tint over native macOS blur.
@@ -37,14 +37,14 @@ PulseBar takes inspiration from the convenience of utilities such as CleanMyMac 
 2. Extract `PulseBar.app` and move it to `/Applications`.
 3. Open PulseBar. Because release builds are Developer ID signed and notarized, macOS can verify the app before launch.
 
-PulseBar requires macOS 14 Sonoma or later.
+PulseBar requires macOS 14 Sonoma or later. Temperature availability depends on the hardware sensors exposed by the Mac; PulseBar shows an unavailable indicator when no compatible reading is provided.
 
 ## How to use
 
 1. Launch PulseBar; the compact monitor appears near the top-right of the active display.
 2. Click the monitor to expand the panel downward.
 3. Use **Processes** to inspect grouped apps and services, search, sort, or stop an allowed process.
-4. Use **Memory** to review RAM history and select applications for memory relief.
+4. Use **Memory** to review the full RAM breakdown and top consumers, optionally select applications, then choose **Free Up**.
 5. Use **Clean** to scan removable files, review every category, and clean only selected items.
 6. Open the gear menu to configure refresh intervals, gradient palette, and tint strength.
 7. Drag the compact monitor or the handle at the top of the expanded panel to reposition PulseBar.
@@ -86,7 +86,7 @@ PulseBar follows Semantic Versioning. The release version is stored in `VERSION`
 
 ## Privacy and permissions
 
-PulseBar reads system metrics, process information, and user-selected cleanup locations locally. It does not require an account or transmit this information.
+PulseBar reads system metrics, available hardware temperature sensors, process information, and user-selected cleanup locations locally. It does not require an account or transmit this information.
 
 - PulseBar can stop only processes permitted by the current macOS user.
 - Protected system processes cannot be stopped from the app.

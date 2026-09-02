@@ -103,6 +103,7 @@ private struct MetricChartCard: View {
     let color: Color
     let points: [MetricHistoryPoint]
     let value: KeyPath<MetricHistoryPoint, Double>
+    var chartHeight: CGFloat = 72
 
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
@@ -143,7 +144,7 @@ private struct MetricChartCard: View {
                     AxisValueLabel()
                 }
             }
-            .frame(height: 72)
+            .frame(height: chartHeight)
             .overlay {
                 if points.count < 2 {
                     Text("Collecting samples…")
@@ -395,6 +396,7 @@ private struct MemoryView: View {
     @ObservedObject var processService: ProcessService
     @ObservedObject var reliefService: MemoryReliefService
     @State private var selectedPIDs: Set<pid_t> = []
+    @State private var showsAllConsumers = true
 
     private var metrics: SystemMetrics {
         metricsService.snapshot
@@ -406,82 +408,88 @@ private struct MemoryView: View {
             .sorted { $0.memoryBytes > $1.memoryBytes }
     }
 
-    private var listedAppBytes: UInt64 {
-        apps.reduce(0) { $0 + $1.memoryBytes }
+    private var consumers: [ProcessInfoItem] {
+        showsAllConsumers ? processService.memoryConsumers : apps
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 8) {
             HStack {
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("Memory used")
+                    Text("Memory")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     Text("\(ByteFormat.string(metrics.memoryUsedBytes)) of \(ByteFormat.string(metrics.memoryTotalBytes))")
                         .font(.headline)
                 }
                 Spacer()
-                PressureBadge(pressure: metrics.pressure)
+                VStack(alignment: .trailing, spacing: 4) {
+                    PressureBadge(pressure: metrics.pressure)
+                    Text("\(ByteFormat.string(metrics.reclaimableBytes)) reclaimable")
+                        .font(.caption2.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                }
             }
 
-            ProgressView(value: metrics.memoryUsedRatio)
-                .tint(pressureColor)
+            MemoryCompositionBar(metrics: metrics)
+
+            LazyVGrid(
+                columns: Array(repeating: GridItem(.flexible(), spacing: 5), count: 3),
+                spacing: 5
+            ) {
+                MemoryKindCell(title: "App Memory", value: metrics.appMemoryBytes, color: .purple)
+                MemoryKindCell(title: "Wired", value: metrics.wiredBytes, color: .orange)
+                MemoryKindCell(title: "Compressed", value: metrics.compressorBytes, color: .pink)
+                MemoryKindCell(title: "Cached Files", value: metrics.cachedFilesBytes, color: .blue)
+                MemoryKindCell(title: "Swap Used", value: metrics.swapUsedBytes, color: .indigo)
+                MemoryKindCell(title: "Free", value: metrics.freeBytes, color: .green)
+            }
 
             MetricChartCard(
                 title: "RAM history · 5 min",
                 currentValue: metrics.memoryUsedRatio * 100,
                 color: .purple,
                 points: metricsService.history,
-                value: \.memoryPercent
+                value: \.memoryPercent,
+                chartHeight: 48
             )
 
             HStack {
-                Label("Reclaimable", systemImage: "arrow.triangle.2.circlepath")
-                Spacer()
-                Text(ByteFormat.string(metrics.reclaimableBytes))
-                    .monospacedDigit()
-            }
-            .font(.caption)
-            .foregroundStyle(.secondary)
-
-            HStack {
-                Label("Running apps", systemImage: "app.badge")
-                Spacer()
-                Text(ByteFormat.string(listedAppBytes))
-                    .monospacedDigit()
-            }
-            .font(.caption)
-            .foregroundStyle(.secondary)
-
-            HStack {
-                Text("Apps to close")
+                Text("Top consumers")
                     .font(.caption.weight(.semibold))
                 Spacer()
-                Text("Largest first")
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                Picker("Consumers", selection: $showsAllConsumers) {
+                    Text("All").tag(true)
+                    Text("Apps").tag(false)
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .frame(width: 104)
+                .controlSize(.mini)
             }
 
-            ScrollView {
-                LazyVStack(spacing: 3) {
-                    ForEach(apps) { item in
-                        Toggle(isOn: Binding(
-                            get: { selectedPIDs.contains(item.pid) },
-                            set: { selected in
+            GeometryReader { viewport in
+                ScrollView {
+                    LazyVStack(spacing: 3) {
+                        ForEach(consumers) { item in
+                            MemoryConsumerRow(
+                                item: item,
+                                totalBytes: metrics.memoryTotalBytes,
+                                isSelected: selectedPIDs.contains(item.pid)
+                            ) { selected in
                                 if selected { selectedPIDs.insert(item.pid) }
                                 else { selectedPIDs.remove(item.pid) }
                             }
-                        )) {
-                            HStack {
-                                Text(item.name).lineLimit(1)
-                                Spacer()
-                                Text(ByteFormat.string(item.memoryBytes))
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
                         }
-                        .toggleStyle(.checkbox)
-                        .padding(.vertical, 3)
+                    }
+                    .frame(width: viewport.size.width, alignment: .top)
+                }
+                .defaultScrollAnchor(.top)
+                .overlay {
+                    if consumers.isEmpty {
+                        Text("Collecting process activity…")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
                 }
             }
@@ -489,18 +497,19 @@ private struct MemoryView: View {
             Button {
                 let selected = apps.filter { selectedPIDs.contains($0.pid) }
                 Task {
-                    await reliefService.relieve(metrics: metrics, quitApps: selected)
+                    await reliefService.freeUp(metrics: metrics, quitApps: selected)
                     selectedPIDs.removeAll()
                 }
             } label: {
                 HStack {
                     if reliefService.isWorking { ProgressView().controlSize(.small) }
-                    Text(reliefService.isWorking ? "Relieving Memory…" : "Relieve Memory")
+                    Text(freeUpButtonTitle)
                 }
                 .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
             .disabled(reliefService.isWorking)
+            .help("Purge inactive memory and close any selected apps")
 
             if let message = reliefService.lastMessage {
                 Text(message)
@@ -511,12 +520,128 @@ private struct MemoryView: View {
         }
     }
 
-    private var pressureColor: Color {
-        switch metrics.pressure {
-        case .normal: .green
-        case .warning: .orange
-        case .critical: .red
+    private var freeUpButtonTitle: String {
+        if reliefService.isWorking { return "Freeing Up Memory…" }
+        if selectedPIDs.isEmpty {
+            return metrics.reclaimableBytes > 0
+                ? "Free Up \(ByteFormat.string(metrics.reclaimableBytes))"
+                : "Free Up Memory"
         }
+        return "Free Up Memory · Close \(selectedPIDs.count)"
+    }
+}
+
+private struct MemoryCompositionBar: View {
+    let metrics: SystemMetrics
+
+    var body: some View {
+        GeometryReader { geometry in
+            HStack(spacing: 2) {
+                segment(metrics.appMemoryBytes, color: .purple, width: geometry.size.width)
+                segment(metrics.wiredBytes, color: .orange, width: geometry.size.width)
+                segment(metrics.compressorBytes, color: .pink, width: geometry.size.width)
+                Spacer(minLength: 0)
+            }
+        }
+        .frame(height: 8)
+        .background(.secondary.opacity(0.16), in: Capsule())
+        .clipShape(Capsule())
+        .accessibilityLabel("Memory composition")
+        .accessibilityValue("App memory \(ByteFormat.string(metrics.appMemoryBytes)), wired \(ByteFormat.string(metrics.wiredBytes)), compressed \(ByteFormat.string(metrics.compressorBytes))")
+    }
+
+    private func segment(_ bytes: UInt64, color: Color, width: CGFloat) -> some View {
+        color.frame(width: max(0, width * ratio(bytes)))
+    }
+
+    private func ratio(_ bytes: UInt64) -> CGFloat {
+        guard metrics.memoryTotalBytes > 0 else { return 0 }
+        return CGFloat(Double(bytes) / Double(metrics.memoryTotalBytes))
+    }
+}
+
+private struct MemoryKindCell: View {
+    let title: String
+    let value: UInt64
+    let color: Color
+
+    var body: some View {
+        HStack(spacing: 5) {
+            Circle()
+                .fill(color)
+                .frame(width: 6, height: 6)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(title)
+                    .font(.system(size: 9))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                Text(ByteFormat.string(value))
+                    .font(.caption2.monospacedDigit().weight(.medium))
+                    .lineLimit(1)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 6)
+        .padding(.vertical, 4)
+        .background(.white.opacity(0.045), in: RoundedRectangle(cornerRadius: 7))
+    }
+}
+
+private struct MemoryConsumerRow: View {
+    let item: ProcessInfoItem
+    let totalBytes: UInt64
+    let isSelected: Bool
+    let select: (Bool) -> Void
+
+    var body: some View {
+        HStack(spacing: 7) {
+            if canClose {
+                Toggle("", isOn: Binding(get: { isSelected }, set: select))
+                    .toggleStyle(.checkbox)
+                    .labelsHidden()
+            } else {
+                Color.clear.frame(width: 14, height: 14)
+            }
+
+            Group {
+                if let icon = item.icon {
+                    Image(nsImage: icon).resizable()
+                } else {
+                    Image(systemName: item.isApp ? "app" : "gearshape")
+                        .resizable()
+                        .scaledToFit()
+                        .padding(2)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .frame(width: 18, height: 18)
+
+            VStack(alignment: .leading, spacing: 2) {
+                HStack {
+                    Text(item.name)
+                        .lineLimit(1)
+                    Spacer()
+                    Text(ByteFormat.string(item.memoryBytes))
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                }
+                ProgressView(value: memoryRatio)
+                    .progressViewStyle(.linear)
+                    .tint(item.isApp ? .purple : .blue)
+            }
+        }
+        .font(.system(size: 10))
+        .padding(.horizontal, 5)
+        .padding(.vertical, 4)
+        .background(.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 7))
+        .help(canClose ? "Select to close this app when freeing memory" : "Background or protected process")
+    }
+
+    private var canClose: Bool { item.isApp && !item.isProtected }
+
+    private var memoryRatio: Double {
+        guard totalBytes > 0 else { return 0 }
+        return min(1, Double(item.memoryBytes) / Double(totalBytes))
     }
 }
 

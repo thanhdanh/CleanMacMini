@@ -13,6 +13,11 @@ struct ChipView: View {
 
             memoryMetric
 
+            Divider()
+                .frame(height: 18)
+
+            temperatureMetric
+
             Image(systemName: expanded ? "chevron.up" : "chevron.down")
                 .font(.system(size: 10, weight: .semibold))
                 .foregroundStyle(.secondary)
@@ -23,14 +28,19 @@ struct ChipView: View {
         .fixedSize(horizontal: true, vertical: false)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(
-            "CPU \(Int(metrics.cpuPercent)) percent, memory \(ByteFormat.string(metrics.memoryUsedBytes)) used of \(ByteFormat.string(metrics.memoryTotalBytes))"
+            accessibilityDescription
         )
     }
 
-    private func metric(symbol: String, label: String, value: String) -> some View {
+    private func metric(
+        symbol: String,
+        label: String,
+        value: String,
+        color: Color? = nil
+    ) -> some View {
         HStack(spacing: 5) {
             Image(systemName: symbol)
-                .foregroundStyle(accentColor)
+                .foregroundStyle(color ?? accentColor)
             Text(label)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
@@ -61,12 +71,36 @@ struct ChipView: View {
         }
     }
 
+    private var temperatureMetric: some View {
+        metric(
+            symbol: "thermometer.medium",
+            label: "TEMP",
+            value: metrics.deviceTemperatureCelsius.map { String(format: "%.0f°", $0) } ?? "—°",
+            color: metrics.deviceTemperatureCelsius.map(temperatureColor) ?? .secondary
+        )
+        .help(metrics.deviceTemperatureCelsius == nil ? "Temperature sensor unavailable on this Mac" : "Device temperature")
+    }
+
     private var accentColor: Color {
         switch metrics.pressure {
         case .normal: .green
         case .warning: .orange
         case .critical: .red
         }
+    }
+
+    private func temperatureColor(_ celsius: Double) -> Color {
+        if celsius >= 90 { return .red }
+        if celsius >= 75 { return .orange }
+        return .cyan
+    }
+
+    private var accessibilityDescription: String {
+        var value = "CPU \(Int(metrics.cpuPercent)) percent, memory \(ByteFormat.string(metrics.memoryUsedBytes)) used of \(ByteFormat.string(metrics.memoryTotalBytes))"
+        if let temperature = metrics.deviceTemperatureCelsius {
+            value += ", device temperature \(Int(temperature.rounded())) degrees Celsius"
+        }
+        return value
     }
 }
 
