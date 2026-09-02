@@ -1,6 +1,6 @@
 # PulseBar
 
-PulseBar is a lightweight macOS system monitor that keeps CPU and memory information visible without taking over your desktop. It lives as a small, transparent overlay in the top-right corner of the screen and expands into a simple control panel when clicked.
+PulseBar is a lightweight macOS system monitor that keeps CPU and memory information visible without taking over your desktop. It lives as a small, transparent overlay in the bottom-left corner of the screen and expands into a simple control panel when clicked.
 
 The project takes inspiration from the convenience of tools such as CleanMyMac, while focusing on an always-available, low-overhead view of system performance. PulseBar is an independent project and is not affiliated with MacPaw.
 
@@ -9,10 +9,10 @@ The project takes inspiration from the convenience of tools such as CleanMyMac, 
 ## Features
 
 - **At-a-glance monitoring** — See live CPU usage, CPU percentage, memory usage, and memory pressure from a compact overlay.
-- **Always within reach** — The floating panel is pinned to the top-right corner, stays available across Spaces and full-screen apps, and can be dragged elsewhere.
-- **Process inspector** — Expand PulseBar to view the apps and background processes using the most CPU or memory.
+- **Always within reach** — The floating panel is pinned to the bottom-left corner, stays available across Spaces and full-screen apps, and can be dragged elsewhere.
+- **Process inspector** — Expand PulseBar to view the apps and background services using the most CPU or memory. Helper processes are grouped into their owning application.
 - **Search and sorting** — Find a process by name or PID and sort the list by resource usage.
-- **Performance history** — Explore rolling five-minute CPU and memory charts with live percentages.
+- **Performance history** — Explore a rolling five-minute CPU chart in Processes and RAM chart in Memory.
 - **Process control** — Quit or force-stop an unresponsive process directly from the panel. Critical macOS processes and PulseBar itself are protected.
 - **Memory relief** — Close selected applications, clear URL cache data, and optionally ask macOS to purge inactive memory.
 - **Disk cleanup** — Scan user caches, logs, Trash, Xcode DerivedData, and large files before choosing what to remove.
@@ -24,15 +24,15 @@ The project takes inspiration from the convenience of tools such as CleanMyMac, 
 
 ## How to use PulseBar
 
-1. Launch PulseBar. The compact monitor appears near the top-right corner of the active display.
+1. Launch PulseBar. The compact monitor appears near the bottom-left corner of the active display.
 2. Read the live CPU and memory values directly from the compact view.
 3. Click the monitor to open the expanded panel.
 4. Use **Processes** to inspect high-usage apps and services, search by name or PID, and quit a process when needed.
-5. Use **History** to view rolling CPU and memory charts for the last five minutes.
+5. Read CPU history at the top of **Processes** and RAM history inside **Memory**.
 6. Use **Memory** to select applications to close and request memory relief.
 7. Use **Clean** to scan removable files, review the categories and sizes, then clean only the items you select.
 8. Select the gear button to configure refresh intervals, gradient palette, and tint strength.
-9. Drag the panel to reposition it. Right-click it to enable **Open at Login**, reset its position, or quit PulseBar.
+9. Drag the panel to reposition it. Right-click it to enable **Open at Login**, reset it to the bottom-left corner, or quit PulseBar.
 
 Stopping a process can cause unsaved work to be lost. Try a normal quit first and use force stop only when an app is unresponsive. Review cleanup selections carefully because removed files are not guaranteed to be recoverable.
 
@@ -103,7 +103,7 @@ Sources/PulseBar/
 
 ## Roadmap
 
-- Continue polishing the expanded Processes, History, Memory, and Clean views
+- Continue polishing the expanded Processes, Memory, and Clean views
 - Improve multi-display positioning and saved placement
 - Package, sign, notarize, and distribute PulseBar as a macOS app
 - Add automated tests for samplers and cleanup safety rules

@@ -65,12 +65,10 @@ struct ExpandedPanelView: View {
                 } else {
                     switch state.selectedTab {
                     case .processes:
-                        ProcessesView(service: state.processes)
-                    case .history:
-                        HistoryView(service: state.metrics)
+                        ProcessesView(service: state.processes, metrics: state.metrics)
                     case .memory:
                         MemoryView(
-                            metrics: state.metrics.snapshot,
+                            metricsService: state.metrics,
                             processService: state.processes,
                             reliefService: state.memory
                         )
@@ -83,45 +81,6 @@ struct ExpandedPanelView: View {
         }
         .padding(.horizontal, 4)
         .padding(.bottom, 4)
-    }
-}
-
-private struct HistoryView: View {
-    @ObservedObject var service: MetricsService
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Performance history")
-                        .font(.headline)
-                    Text("Rolling five-minute window")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                Spacer()
-                Text("\(service.history.count) samples")
-                    .font(.caption.monospacedDigit())
-                    .foregroundStyle(.secondary)
-            }
-
-            MetricChartCard(
-                title: "CPU",
-                currentValue: service.snapshot.cpuPercent,
-                color: .green,
-                points: service.history,
-                value: \.cpuPercent
-            )
-
-            MetricChartCard(
-                title: "Memory",
-                currentValue: service.snapshot.memoryUsedRatio * 100,
-                color: .purple,
-                points: service.history,
-                value: \.memoryPercent
-            )
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
 }
 
@@ -171,7 +130,7 @@ private struct MetricChartCard: View {
                     AxisValueLabel()
                 }
             }
-            .frame(height: 116)
+            .frame(height: 72)
             .overlay {
                 if points.count < 2 {
                     Text("Collecting samples…")
@@ -274,10 +233,19 @@ private struct SettingsView: View {
 
 private struct ProcessesView: View {
     @ObservedObject var service: ProcessService
+    @ObservedObject var metrics: MetricsService
     @State private var errorMessage: String?
 
     var body: some View {
         VStack(spacing: 8) {
+            MetricChartCard(
+                title: "CPU history · 5 min",
+                currentValue: metrics.snapshot.cpuPercent,
+                color: .green,
+                points: metrics.history,
+                value: \.cpuPercent
+            )
+
             HStack {
                 TextField("Search process or PID", text: $service.query)
                     .textFieldStyle(.roundedBorder)
@@ -369,7 +337,7 @@ private struct ProcessRow: View {
                 Text(item.name)
                     .lineLimit(1)
                     .help(item.name)
-                Text("PID \(item.pid)")
+                Text(processSubtitle)
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
             }
@@ -400,13 +368,24 @@ private struct ProcessRow: View {
         .padding(.horizontal, ProcessTableLayout.horizontalPadding)
         .background(.white.opacity(0.045), in: RoundedRectangle(cornerRadius: 7))
     }
+
+    private var processSubtitle: String {
+        if item.processCount > 1 {
+            return "\(item.processCount) processes · PID \(item.pid)"
+        }
+        return "PID \(item.pid)"
+    }
 }
 
 private struct MemoryView: View {
-    let metrics: SystemMetrics
+    @ObservedObject var metricsService: MetricsService
     @ObservedObject var processService: ProcessService
     @ObservedObject var reliefService: MemoryReliefService
     @State private var selectedPIDs: Set<pid_t> = []
+
+    private var metrics: SystemMetrics {
+        metricsService.snapshot
+    }
 
     private var apps: [ProcessInfoItem] {
         processService.applications
@@ -434,6 +413,14 @@ private struct MemoryView: View {
 
             ProgressView(value: metrics.memoryUsedRatio)
                 .tint(pressureColor)
+
+            MetricChartCard(
+                title: "RAM history · 5 min",
+                currentValue: metrics.memoryUsedRatio * 100,
+                color: .purple,
+                points: metricsService.history,
+                value: \.memoryPercent
+            )
 
             HStack {
                 Label("Reclaimable", systemImage: "arrow.triangle.2.circlepath")

@@ -101,7 +101,8 @@ final class ProcessService: ObservableObject {
         let regularApps = byPid.filter { $0.value.activationPolicy == .regular }
         let regularPIDs = Set(regularApps.keys)
         let parentByPID = Dictionary(uniqueKeysWithValues: raw.map { ($0.pid, $0.parentPID) })
-        var appUsage: [pid_t: (cpu: Double, memory: UInt64)] = [:]
+        var appUsage: [pid_t: (cpu: Double, memory: UInt64, count: Int)] = [:]
+        var ownerByPID: [pid_t: pid_t] = [:]
 
         for row in raw {
             guard let ownerPID = Self.ownerApplicationPID(
@@ -109,15 +110,18 @@ final class ProcessService: ObservableObject {
                 applicationPIDs: regularPIDs,
                 parentByPID: parentByPID
             ) else { continue }
-            var usage = appUsage[ownerPID] ?? (cpu: 0, memory: 0)
+            ownerByPID[row.pid] = ownerPID
+            var usage = appUsage[ownerPID] ?? (cpu: 0, memory: 0, count: 0)
             usage.cpu += row.cpuPercent
             usage.memory += row.memoryBytes
+            usage.count += 1
             appUsage[ownerPID] = usage
         }
 
-        applications = regularApps.compactMap { pid, app in
+        applications = regularApps.compactMap { entry -> ProcessInfoItem? in
+            let (pid, app) = entry
             guard let name = app.localizedName else { return nil }
-            let usage = appUsage[pid] ?? (cpu: 0, memory: 0)
+            let usage = appUsage[pid] ?? (cpu: 0, memory: 0, count: 0)
             return ProcessInfoItem(
                 pid: pid,
                 name: name,
@@ -125,7 +129,8 @@ final class ProcessService: ObservableObject {
                 memoryBytes: usage.memory,
                 isApp: true,
                 isProtected: Self.isProtected(name: name, pid: pid),
-                icon: app.icon
+                icon: app.icon,
+                processCount: max(1, usage.count)
             )
         }
         .sorted { lhs, rhs in
@@ -133,17 +138,13 @@ final class ProcessService: ObservableObject {
             return lhs.memoryBytes > rhs.memoryBytes
         }
 
-        var next: [ProcessInfoItem] = []
-        next.reserveCapacity(40)
-        for row in raw {
-            if next.count >= 40 { break }
+        var grouped = applications
+        grouped.reserveCapacity(applications.count + raw.count)
+        for row in raw where ownerByPID[row.pid] == nil {
             let app = byPid[row.pid]
             let name = app?.localizedName ?? Self.processName(row.pid)
             if name.isEmpty { continue }
-            if !query.isEmpty, !name.lowercased().contains(query), !String(row.pid).contains(query) {
-                continue
-            }
-            next.append(
+            grouped.append(
                 ProcessInfoItem(
                     pid: row.pid,
                     name: name,
@@ -155,7 +156,26 @@ final class ProcessService: ObservableObject {
                 )
             )
         }
-        items = next
+
+        if !query.isEmpty {
+            grouped.removeAll {
+                !$0.name.lowercased().contains(query) && !String($0.pid).contains(query)
+            }
+        }
+
+        switch sort {
+        case .cpu:
+            grouped.sort {
+                if $0.cpuPercent == $1.cpuPercent { return $0.name < $1.name }
+                return $0.cpuPercent > $1.cpuPercent
+            }
+        case .memory:
+            grouped.sort {
+                if $0.memoryBytes == $1.memoryBytes { return $0.name < $1.name }
+                return $0.memoryBytes > $1.memoryBytes
+            }
+        }
+        items = Array(grouped.prefix(40))
     }
 
     private static func ownerApplicationPID(

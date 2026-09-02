@@ -10,6 +10,27 @@ struct ProcessInfoItem: Identifiable, Equatable {
     let isApp: Bool
     let isProtected: Bool
     let icon: NSImage?
+    let processCount: Int
+
+    init(
+        pid: pid_t,
+        name: String,
+        cpuPercent: Double,
+        memoryBytes: UInt64,
+        isApp: Bool,
+        isProtected: Bool,
+        icon: NSImage?,
+        processCount: Int = 1
+    ) {
+        self.pid = pid
+        self.name = name
+        self.cpuPercent = cpuPercent
+        self.memoryBytes = memoryBytes
+        self.isApp = isApp
+        self.isProtected = isProtected
+        self.icon = icon
+        self.processCount = processCount
+    }
 
     static func == (lhs: ProcessInfoItem, rhs: ProcessInfoItem) -> Bool {
         lhs.pid == rhs.pid
@@ -18,6 +39,7 @@ struct ProcessInfoItem: Identifiable, Equatable {
             && lhs.memoryBytes == rhs.memoryBytes
             && lhs.isApp == rhs.isApp
             && lhs.isProtected == rhs.isProtected
+            && lhs.processCount == rhs.processCount
     }
 }
 

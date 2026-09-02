@@ -20,7 +20,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             queue: .main
         ) { [weak self] _ in
             Task { @MainActor in
-                self?.overlay?.pinToTopRightIfNeeded()
+                self?.overlay?.pinToDefaultPositionIfNeeded()
             }
         }
     }
@@ -38,7 +38,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 final class AppState: ObservableObject {
     enum Tab: String, CaseIterable, Identifiable {
         case processes = "Processes"
-        case history = "History"
         case memory = "Memory"
         case clean = "Clean"
         var id: String { rawValue }

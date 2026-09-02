@@ -17,7 +17,7 @@ struct RootOverlayView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            ChipView(metrics: state.metrics.snapshot, expanded: state.isExpanded)
+            LiveChipView(service: state.metrics, expanded: state.isExpanded)
                 .contentShape(Rectangle())
                 .gesture(
                     DragGesture(minimumDistance: 0, coordinateSpace: .global)
@@ -83,6 +83,15 @@ struct RootOverlayView: View {
         .onPreferenceChange(SizePreferenceKey.self) { size in
             onSizeChange?(size)
         }
+    }
+}
+
+private struct LiveChipView: View {
+    @ObservedObject var service: MetricsService
+    let expanded: Bool
+
+    var body: some View {
+        ChipView(metrics: service.snapshot, expanded: expanded)
     }
 }
 
