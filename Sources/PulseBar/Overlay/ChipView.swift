@@ -14,7 +14,7 @@ struct ChipView: View {
             metric(
                 symbol: "memorychip",
                 label: "RAM",
-                value: ByteFormat.shortGB(metrics.memoryUsedBytes)
+                value: "\(ByteFormat.shortGB(metrics.memoryUsedBytes)) / \(ByteFormat.shortGB(metrics.memoryTotalBytes))"
             )
 
             Image(systemName: expanded ? "chevron.up" : "chevron.down")
@@ -27,7 +27,7 @@ struct ChipView: View {
         .fixedSize(horizontal: true, vertical: false)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(
-            "CPU \(Int(metrics.cpuPercent)) percent, memory \(ByteFormat.string(metrics.memoryUsedBytes)) used"
+            "CPU \(Int(metrics.cpuPercent)) percent, memory \(ByteFormat.string(metrics.memoryUsedBytes)) used of \(ByteFormat.string(metrics.memoryTotalBytes))"
         )
     }
 

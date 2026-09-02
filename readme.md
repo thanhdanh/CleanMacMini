@@ -5,7 +5,7 @@ PulseBar is a lightweight, native macOS system monitor for keeping CPU and memor
 PulseBar takes inspiration from the convenience of utilities such as CleanMyMac while remaining an independent, on-device project that is not affiliated with MacPaw.
 
 <p align="center">
-  <img src="docs/images/pulsebar-compact.png" alt="PulseBar compact CPU and RAM monitor" width="466">
+  <img src="docs/images/pulsebar-compact.png" alt="PulseBar compact CPU and used/total RAM monitor" width="574">
 </p>
 
 ## Product tour
