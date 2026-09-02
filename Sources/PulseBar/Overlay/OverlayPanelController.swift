@@ -87,12 +87,8 @@ final class OverlayPanelController: NSObject {
     private func applyContentSize(_ size: NSSize) {
         let padded = NSSize(width: max(320, ceil(size.width)), height: max(40, ceil(size.height)))
         var frame = panel.frame
-        let top = frame.maxY
-        let right = frame.maxX
         frame.size = padded
-        if state.userMovedOverlay {
-            frame.origin = NSPoint(x: right - padded.width, y: top - padded.height)
-        } else if let screen = panel.screen ?? NSScreen.main {
+        if !state.userMovedOverlay, let screen = panel.screen ?? NSScreen.main {
             let visible = screen.visibleFrame
             frame.origin = NSPoint(
                 x: visible.minX + 14,

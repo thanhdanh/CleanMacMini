@@ -19,17 +19,21 @@ struct ExpandedPanelView: View {
 
     var body: some View {
         VStack(spacing: 10) {
-            Capsule()
-                .fill(.secondary.opacity(0.55))
-                .frame(width: 36, height: 4)
-                .frame(maxWidth: .infinity)
-                .contentShape(Rectangle())
-                .gesture(
-                    DragGesture(minimumDistance: 2, coordinateSpace: .global)
-                        .onChanged { _ in onDragChange?() }
-                        .onEnded { _ in onDragEnd?() }
-                )
-                .help("Drag to move PulseBar")
+            ZStack {
+                Color.clear
+                Capsule()
+                    .fill(.secondary.opacity(0.55))
+                    .frame(width: 40, height: 4)
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 18)
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 2, coordinateSpace: .global)
+                    .onChanged { _ in onDragChange?() }
+                    .onEnded { _ in onDragEnd?() }
+            )
+            .help("Drag to move PulseBar")
 
             HStack(spacing: 7) {
                 if showsSettings {
@@ -77,7 +81,7 @@ struct ExpandedPanelView: View {
                     }
                 }
             }
-            .frame(width: 360, height: 360)
+            .frame(width: 360, height: 460)
         }
         .padding(.horizontal, 4)
         .padding(.bottom, 4)

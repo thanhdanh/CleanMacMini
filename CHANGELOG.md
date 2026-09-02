@@ -11,6 +11,17 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 - Add packaging, signing, notarization, and release automation.
 
+## [0.5.1] - 2026-09-02
+
+### Changed
+
+- Increase the expanded panel height so more process and memory rows are visible without scrolling.
+
+### Fixed
+
+- Keep the compact chip anchored at the bottom-left while the panel expands upward.
+- Increase the expanded drag handle hit area and retain chip dragging while expanded.
+
 ## [0.5.0] - 2026-09-02
 
 ### Changed
@@ -107,7 +118,8 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 - Login item management.
 - Project documentation and source-build instructions.
 
-[Unreleased]: https://github.com/thanhdanh/CleanMacMini/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/thanhdanh/CleanMacMini/compare/v0.5.1...HEAD
+[0.5.1]: https://github.com/thanhdanh/CleanMacMini/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/thanhdanh/CleanMacMini/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/thanhdanh/CleanMacMini/compare/v0.3.4...v0.4.0
 [0.3.4]: https://github.com/thanhdanh/CleanMacMini/compare/v0.3.3...v0.3.4

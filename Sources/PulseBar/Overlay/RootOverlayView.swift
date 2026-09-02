@@ -17,6 +17,15 @@ struct RootOverlayView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            if state.isExpanded {
+                ExpandedPanelView(
+                    state: state,
+                    onDragChange: onDragChange,
+                    onDragEnd: onDragEnd
+                )
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
+            }
+
             LiveChipView(service: state.metrics, expanded: state.isExpanded)
                 .contentShape(Rectangle())
                 .gesture(
@@ -52,15 +61,6 @@ struct RootOverlayView: View {
                         NSApplication.shared.terminate(nil)
                     }
                 }
-
-            if state.isExpanded {
-                ExpandedPanelView(
-                    state: state,
-                    onDragChange: onDragChange,
-                    onDragEnd: onDragEnd
-                )
-                    .transition(.opacity.combined(with: .move(edge: .top)))
-            }
         }
         .padding(8)
         .background { PanelBackground(preferences: state.preferences) }

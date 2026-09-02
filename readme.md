@@ -32,7 +32,7 @@ The project takes inspiration from the convenience of tools such as CleanMyMac, 
 6. Use **Memory** to select applications to close and request memory relief.
 7. Use **Clean** to scan removable files, review the categories and sizes, then clean only the items you select.
 8. Select the gear button to configure refresh intervals, gradient palette, and tint strength.
-9. Drag the panel to reposition it. Right-click it to enable **Open at Login**, reset it to the bottom-left corner, or quit PulseBar.
+9. Drag either the compact monitor or the wide handle at the top of the expanded panel to reposition it. Right-click the monitor to enable **Open at Login**, reset it to the bottom-left corner, or quit PulseBar. From the bottom-left position, the panel expands upward so the monitor stays in place.
 
 Stopping a process can cause unsaved work to be lost. Try a normal quit first and use force stop only when an app is unresponsive. Review cleanup selections carefully because removed files are not guaranteed to be recoverable.
 
