@@ -12,6 +12,8 @@ final class OverlayPanelController: NSObject {
     private let panel: OverlayPanel
     private let hosting: NSHostingView<RootOverlayView>
     private var dragStartOrigin: NSPoint?
+    private var dragStartMouseLocation: NSPoint?
+    private var isUserDragging = false
     private var isProgrammaticMove = false
 
     init(state: AppState) {
@@ -33,15 +35,17 @@ final class OverlayPanelController: NSObject {
             onSizeChange: { [weak self] size in
                 self?.applyContentSize(size)
             },
-            onDragChange: { [weak self] translation in
-                self?.movePanel(by: translation)
+            onDragChange: { [weak self] in
+                self?.movePanelToMouse()
             },
             onDragEnd: { [weak self] in
-                self?.dragStartOrigin = nil
+                self?.endPanelDrag()
             },
             onResetPosition: { [weak self] in
                 guard let self else { return }
                 self.dragStartOrigin = nil
+                self.dragStartMouseLocation = nil
+                self.isUserDragging = false
                 self.state.userMovedOverlay = false
                 self.pinToTopRightIfNeeded()
             }
@@ -101,18 +105,30 @@ final class OverlayPanelController: NSObject {
         }
     }
 
-    private func movePanel(by translation: CGSize) {
+    private func movePanelToMouse() {
         if dragStartOrigin == nil {
             dragStartOrigin = panel.frame.origin
+            dragStartMouseLocation = NSEvent.mouseLocation
+            isUserDragging = true
         }
-        guard let start = dragStartOrigin else { return }
-        state.userMovedOverlay = true
+        guard let start = dragStartOrigin,
+              let mouseStart = dragStartMouseLocation else { return }
+        let mouseNow = NSEvent.mouseLocation
         panel.setFrameOrigin(
             NSPoint(
-                x: start.x + translation.width,
-                y: start.y - translation.height
+                x: start.x + mouseNow.x - mouseStart.x,
+                y: start.y + mouseNow.y - mouseStart.y
             )
         )
+    }
+
+    private func endPanelDrag() {
+        dragStartOrigin = nil
+        dragStartMouseLocation = nil
+        isUserDragging = false
+        if !state.userMovedOverlay {
+            state.userMovedOverlay = true
+        }
     }
 
     private func performProgrammaticMove(_ action: () -> Void) {
@@ -126,7 +142,9 @@ final class OverlayPanelController: NSObject {
 
 extension OverlayPanelController: NSWindowDelegate {
     func windowDidMove(_ notification: Notification) {
-        guard !isProgrammaticMove else { return }
-        state.userMovedOverlay = true
+        guard !isProgrammaticMove, !isUserDragging else { return }
+        if !state.userMovedOverlay {
+            state.userMovedOverlay = true
+        }
     }
 }

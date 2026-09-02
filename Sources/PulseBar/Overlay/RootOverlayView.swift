@@ -10,7 +10,7 @@ struct SizePreferenceKey: PreferenceKey {
 struct RootOverlayView: View {
     @ObservedObject var state: AppState
     var onSizeChange: ((CGSize) -> Void)?
-    var onDragChange: ((CGSize) -> Void)?
+    var onDragChange: (() -> Void)?
     var onDragEnd: (() -> Void)?
     var onResetPosition: (() -> Void)?
     @State private var chipWasDragged = false
@@ -25,7 +25,7 @@ struct RootOverlayView: View {
                             let distance = hypot(value.translation.width, value.translation.height)
                             if distance >= 3 {
                                 chipWasDragged = true
-                                onDragChange?(value.translation)
+                                onDragChange?()
                             }
                         }
                         .onEnded { _ in
