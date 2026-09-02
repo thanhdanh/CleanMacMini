@@ -21,12 +21,21 @@ struct ExpandedPanelView: View {
         VStack(spacing: 10) {
             ZStack {
                 Color.clear
+
+                HStack {
+                    Text(AppVersion.display)
+                        .font(.caption2.monospacedDigit().weight(.medium))
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                }
+                .padding(.leading, 4)
+
                 Capsule()
                     .fill(.secondary.opacity(0.55))
                     .frame(width: 40, height: 4)
             }
             .frame(maxWidth: .infinity)
-            .frame(height: 18)
+            .frame(height: 26)
             .contentShape(Rectangle())
             .gesture(
                 DragGesture(minimumDistance: 2, coordinateSpace: .global)

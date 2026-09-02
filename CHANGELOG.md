@@ -15,6 +15,7 @@ All notable changes to PulseBar are documented in this file. PulseBar follows
 - Disk cleanup scanning for user caches, logs, Trash, Xcode DerivedData, and large files.
 - Configurable metric and process refresh intervals with Low Power Mode-aware sampling.
 - Drag repositioning in compact and expanded modes, reset positioning, and Open at Login support.
+- An in-panel version label and a larger top-left drag target in expanded mode.
 - Release packaging plus Developer ID signing, Apple notarization, stapling, and GitHub Release automation.
 
 [1.0.0]: https://github.com/thanhdanh/CleanMacMini/releases/tag/v1.0.0

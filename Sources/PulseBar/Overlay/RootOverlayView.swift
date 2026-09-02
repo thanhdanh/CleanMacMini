@@ -80,9 +80,26 @@ struct RootOverlayView: View {
                 Color.clear.preference(key: SizePreferenceKey.self, value: geo.size)
             }
         )
+        .simultaneousGesture(expandedCornerDragGesture)
         .onPreferenceChange(SizePreferenceKey.self) { size in
             onSizeChange?(size)
         }
+    }
+
+    private var expandedCornerDragGesture: some Gesture {
+        DragGesture(minimumDistance: 2, coordinateSpace: .local)
+            .onChanged { value in
+                guard isExpandedCornerDrag(value) else { return }
+                onDragChange?()
+            }
+            .onEnded { value in
+                guard isExpandedCornerDrag(value) else { return }
+                onDragEnd?()
+            }
+    }
+
+    private func isExpandedCornerDrag(_ value: DragGesture.Value) -> Bool {
+        state.isExpanded && value.startLocation.x <= 80 && value.startLocation.y <= 48
     }
 }
 
