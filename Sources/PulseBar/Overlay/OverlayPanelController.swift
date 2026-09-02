@@ -11,7 +11,8 @@ final class OverlayPanelController: NSObject {
     private let state: AppState
     private let panel: OverlayPanel
     private let hosting: NSHostingView<RootOverlayView>
-    private var userMoved = false
+    private var dragStartOrigin: NSPoint?
+    private var isProgrammaticMove = false
 
     init(state: AppState) {
         self.state = state
@@ -27,19 +28,34 @@ final class OverlayPanelController: NSObject {
         )
         super.init()
 
-        hosting.rootView = RootOverlayView(state: state, onSizeChange: { [weak self] size in
-            self?.applyContentSize(size)
-        })
+        hosting.rootView = RootOverlayView(
+            state: state,
+            onSizeChange: { [weak self] size in
+                self?.applyContentSize(size)
+            },
+            onDragChange: { [weak self] translation in
+                self?.movePanel(by: translation)
+            },
+            onDragEnd: { [weak self] in
+                self?.dragStartOrigin = nil
+            },
+            onResetPosition: { [weak self] in
+                guard let self else { return }
+                self.dragStartOrigin = nil
+                self.state.userMovedOverlay = false
+                self.pinToTopRightIfNeeded()
+            }
+        )
 
         panel.isFloatingPanel = true
         panel.level = .statusBar
         panel.isOpaque = false
         panel.backgroundColor = .clear
-        panel.hasShadow = true
+        panel.hasShadow = false
         panel.hidesOnDeactivate = false
         panel.becomesKeyOnlyIfNeeded = true
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
-        panel.isMovableByWindowBackground = true
+        panel.isMovableByWindowBackground = false
         panel.contentView = hosting
         panel.animationBehavior = .utilityWindow
         panel.delegate = self
@@ -60,7 +76,9 @@ final class OverlayPanelController: NSObject {
             x: visible.maxX - size.width - 14,
             y: visible.maxY - size.height - 10
         )
-        panel.setFrameOrigin(origin)
+        performProgrammaticMove {
+            panel.setFrameOrigin(origin)
+        }
     }
 
     private func applyContentSize(_ size: NSSize) {
@@ -78,13 +96,37 @@ final class OverlayPanelController: NSObject {
                 y: visible.maxY - padded.height - 10
             )
         }
-        panel.setFrame(frame, display: true)
+        performProgrammaticMove {
+            panel.setFrame(frame, display: true)
+        }
+    }
+
+    private func movePanel(by translation: CGSize) {
+        if dragStartOrigin == nil {
+            dragStartOrigin = panel.frame.origin
+        }
+        guard let start = dragStartOrigin else { return }
+        state.userMovedOverlay = true
+        panel.setFrameOrigin(
+            NSPoint(
+                x: start.x + translation.width,
+                y: start.y - translation.height
+            )
+        )
+    }
+
+    private func performProgrammaticMove(_ action: () -> Void) {
+        isProgrammaticMove = true
+        action()
+        DispatchQueue.main.async { [weak self] in
+            self?.isProgrammaticMove = false
+        }
     }
 }
 
 extension OverlayPanelController: NSWindowDelegate {
     func windowDidMove(_ notification: Notification) {
-        userMoved = true
+        guard !isProgrammaticMove else { return }
         state.userMovedOverlay = true
     }
 }

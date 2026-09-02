@@ -6,6 +6,7 @@ import Foundation
 @MainActor
 final class ProcessService: ObservableObject {
     @Published private(set) var items: [ProcessInfoItem] = []
+    @Published private(set) var applications: [ProcessInfoItem] = []
     @Published var sort: ProcessSort = .cpu {
         didSet { Task { await refresh() } }
     }
@@ -72,11 +73,46 @@ final class ProcessService: ObservableObject {
     private func refresh() async {
         let sort = sort
         let query = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        let raw = await sampler.snapshot(sort: sort, limit: 40)
+        let raw = await sampler.snapshot(sort: sort)
 
         var byPid: [pid_t: NSRunningApplication] = [:]
         for app in NSWorkspace.shared.runningApplications {
             byPid[app.processIdentifier] = app
+        }
+
+        let regularApps = byPid.filter { $0.value.activationPolicy == .regular }
+        let regularPIDs = Set(regularApps.keys)
+        let parentByPID = Dictionary(uniqueKeysWithValues: raw.map { ($0.pid, $0.parentPID) })
+        var appUsage: [pid_t: (cpu: Double, memory: UInt64)] = [:]
+
+        for row in raw {
+            guard let ownerPID = Self.ownerApplicationPID(
+                for: row.pid,
+                applicationPIDs: regularPIDs,
+                parentByPID: parentByPID
+            ) else { continue }
+            var usage = appUsage[ownerPID] ?? (cpu: 0, memory: 0)
+            usage.cpu += row.cpuPercent
+            usage.memory += row.memoryBytes
+            appUsage[ownerPID] = usage
+        }
+
+        applications = regularApps.compactMap { pid, app in
+            guard let name = app.localizedName else { return nil }
+            let usage = appUsage[pid] ?? (cpu: 0, memory: 0)
+            return ProcessInfoItem(
+                pid: pid,
+                name: name,
+                cpuPercent: usage.cpu,
+                memoryBytes: usage.memory,
+                isApp: true,
+                isProtected: Self.isProtected(name: name, pid: pid),
+                icon: app.icon
+            )
+        }
+        .sorted { lhs, rhs in
+            if lhs.memoryBytes == rhs.memoryBytes { return lhs.name < rhs.name }
+            return lhs.memoryBytes > rhs.memoryBytes
         }
 
         var next: [ProcessInfoItem] = []
@@ -102,6 +138,23 @@ final class ProcessService: ObservableObject {
             )
         }
         items = next
+    }
+
+    private static func ownerApplicationPID(
+        for pid: pid_t,
+        applicationPIDs: Set<pid_t>,
+        parentByPID: [pid_t: pid_t]
+    ) -> pid_t? {
+        var current = pid
+        var visited: Set<pid_t> = []
+
+        for _ in 0..<32 {
+            if applicationPIDs.contains(current) { return current }
+            guard current > 1, visited.insert(current).inserted,
+                  let parent = parentByPID[current], parent != current else { return nil }
+            current = parent
+        }
+        return nil
     }
 
     private static func processName(_ pid: pid_t) -> String {

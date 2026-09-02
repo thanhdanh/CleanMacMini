@@ -3,6 +3,7 @@ import Foundation
 
 struct RawProcessUsage: Sendable {
     let pid: pid_t
+    let parentPID: pid_t
     let cpuPercent: Double
     let memoryBytes: UInt64
 }
@@ -17,7 +18,7 @@ actor ProcessSampler {
     private var previous: [pid_t: CPUSample] = [:]
     private let cpuCount = max(1, Double(ProcessInfo.processInfo.processorCount))
 
-    func snapshot(sort: ProcessSort, limit: Int) -> [RawProcessUsage] {
+    func snapshot(sort: ProcessSort) -> [RawProcessUsage] {
         let pids = allPids()
         var usage: [RawProcessUsage] = []
         usage.reserveCapacity(min(pids.count, 256))
@@ -35,7 +36,14 @@ actor ProcessSampler {
                 let deltaT = max(0.001, now - last.timestamp)
                 cpu = min(100 * cpuCount, (Double(deltaNs) / 1_000_000_000 / deltaT / cpuCount) * 100)
             }
-            usage.append(RawProcessUsage(pid: pid, cpuPercent: cpu, memoryBytes: task.pti_resident_size))
+            usage.append(
+                RawProcessUsage(
+                    pid: pid,
+                    parentPID: parentPID(pid),
+                    cpuPercent: cpu,
+                    memoryBytes: task.pti_resident_size
+                )
+            )
         }
 
         previous = nextPrevious
@@ -47,9 +55,6 @@ actor ProcessSampler {
             usage.sort { $0.memoryBytes > $1.memoryBytes }
         }
 
-        if usage.count > limit * 3 {
-            usage = Array(usage.prefix(limit * 3))
-        }
         return usage
     }
 
@@ -69,5 +74,13 @@ actor ProcessSampler {
         let result = proc_pidinfo(pid, PROC_PIDTASKINFO, 0, &info, size)
         guard result == size else { return nil }
         return info
+    }
+
+    private func parentPID(_ pid: pid_t) -> pid_t {
+        var info = proc_bsdinfo()
+        let size = Int32(MemoryLayout<proc_bsdinfo>.stride)
+        let result = proc_pidinfo(pid, PROC_PIDTBSDINFO, 0, &info, size)
+        guard result == size else { return 0 }
+        return pid_t(info.pbi_ppid)
     }
 }

@@ -157,7 +157,13 @@ private struct MemoryView: View {
     @State private var selectedPIDs: Set<pid_t> = []
 
     private var apps: [ProcessInfoItem] {
-        processService.items.filter { $0.isApp && !$0.isProtected }
+        processService.applications
+            .filter { !$0.isProtected }
+            .sorted { $0.memoryBytes > $1.memoryBytes }
+    }
+
+    private var listedAppBytes: UInt64 {
+        apps.reduce(0) { $0 + $1.memoryBytes }
     }
 
     var body: some View {
@@ -186,8 +192,23 @@ private struct MemoryView: View {
             .font(.caption)
             .foregroundStyle(.secondary)
 
-            Text("Apps to close")
-                .font(.caption.weight(.semibold))
+            HStack {
+                Label("Running apps", systemImage: "app.badge")
+                Spacer()
+                Text(ByteFormat.string(listedAppBytes))
+                    .monospacedDigit()
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
+
+            HStack {
+                Text("Apps to close")
+                    .font(.caption.weight(.semibold))
+                Spacer()
+                Text("Largest first")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
 
             ScrollView {
                 LazyVStack(spacing: 3) {

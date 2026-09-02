@@ -10,25 +10,43 @@ struct SizePreferenceKey: PreferenceKey {
 struct RootOverlayView: View {
     @ObservedObject var state: AppState
     var onSizeChange: ((CGSize) -> Void)?
+    var onDragChange: ((CGSize) -> Void)?
+    var onDragEnd: (() -> Void)?
+    var onResetPosition: (() -> Void)?
+    @State private var chipWasDragged = false
 
     var body: some View {
         VStack(spacing: 0) {
             ChipView(metrics: state.metrics.snapshot, expanded: state.isExpanded)
                 .contentShape(Rectangle())
-                .onTapGesture {
-                    withAnimation(.spring(response: 0.28, dampingFraction: 0.86)) {
-                        state.isExpanded.toggle()
-                    }
-                    state.metrics.setFastMode(state.isExpanded)
-                }
+                .gesture(
+                    DragGesture(minimumDistance: 0, coordinateSpace: .global)
+                        .onChanged { value in
+                            let distance = hypot(value.translation.width, value.translation.height)
+                            if distance >= 3 {
+                                chipWasDragged = true
+                                onDragChange?(value.translation)
+                            }
+                        }
+                        .onEnded { _ in
+                            if chipWasDragged {
+                                onDragEnd?()
+                            } else {
+                                withAnimation(.spring(response: 0.28, dampingFraction: 0.86)) {
+                                    state.isExpanded.toggle()
+                                }
+                                state.metrics.setFastMode(state.isExpanded)
+                            }
+                            chipWasDragged = false
+                        }
+                )
                 .contextMenu {
                     Toggle("Open at Login", isOn: Binding(
                         get: { state.loginItem.isEnabled },
                         set: { _ in state.loginItem.toggle() }
                     ))
                     Button("Reset position") {
-                        state.userMovedOverlay = false
-                        AppDelegate.shared?.applicationDidFinishLaunching(Notification(name: Notification.Name("reset")))
+                        onResetPosition?()
                     }
                     Divider()
                     Button("Quit PulseBar") {
@@ -47,7 +65,6 @@ struct RootOverlayView: View {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .strokeBorder(.white.opacity(0.18), lineWidth: 1)
         )
-        .shadow(color: .black.opacity(0.22), radius: 16, y: 6)
         .background(
             GeometryReader { geo in
                 Color.clear.preference(key: SizePreferenceKey.self, value: geo.size)
@@ -56,6 +73,5 @@ struct RootOverlayView: View {
         .onPreferenceChange(SizePreferenceKey.self) { size in
             onSizeChange?(size)
         }
-        .padding(2)
     }
 }
