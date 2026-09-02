@@ -17,6 +17,13 @@ private struct CPUSample {
 actor ProcessSampler {
     private var previous: [pid_t: CPUSample] = [:]
     private let cpuCount = max(1, Double(ProcessInfo.processInfo.processorCount))
+    private let machTicksToNanoseconds: Double = {
+        var info = mach_timebase_info_data_t()
+        guard mach_timebase_info(&info) == KERN_SUCCESS, info.denom != 0 else {
+            return 1
+        }
+        return Double(info.numer) / Double(info.denom)
+    }()
 
     func snapshot(sort: ProcessSort) -> [RawProcessUsage] {
         let pids = allPids()
@@ -31,10 +38,13 @@ actor ProcessSampler {
             let sample = CPUSample(user: task.pti_total_user, system: task.pti_total_system, timestamp: now)
             nextPrevious[pid] = sample
             var cpu = 0.0
-            if let last = previous[pid] {
-                let deltaNs = (sample.user &- last.user) + (sample.system &- last.system)
+            if let last = previous[pid],
+               sample.user >= last.user,
+               sample.system >= last.system {
+                let deltaTicks = (sample.user - last.user) + (sample.system - last.system)
+                let deltaSeconds = Double(deltaTicks) * machTicksToNanoseconds / 1_000_000_000
                 let deltaT = max(0.001, now - last.timestamp)
-                cpu = min(100 * cpuCount, (Double(deltaNs) / 1_000_000_000 / deltaT / cpuCount) * 100)
+                cpu = min(100, max(0, deltaSeconds / deltaT / cpuCount * 100))
             }
             usage.append(
                 RawProcessUsage(
