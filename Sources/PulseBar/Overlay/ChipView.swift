@@ -26,7 +26,7 @@ struct ChipView: View {
         .frame(height: 28)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(
-            "CPU (Int(metrics.cpuPercent)) percent, memory (ByteFormat.string(metrics.memoryUsedBytes)) used"
+            "CPU \(Int(metrics.cpuPercent)) percent, memory \(ByteFormat.string(metrics.memoryUsedBytes)) used"
         )
     }
 

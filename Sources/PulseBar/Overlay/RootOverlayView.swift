@@ -64,10 +64,35 @@ struct RootOverlayView: View {
             }
         }
         .padding(8)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background {
+            let shape = RoundedRectangle(cornerRadius: 16, style: .continuous)
+            shape
+                .fill(.ultraThinMaterial)
+                .overlay {
+                    shape.fill(
+                        LinearGradient(
+                            stops: [
+                                .init(color: Color.blue.opacity(0.20), location: 0),
+                                .init(color: Color.indigo.opacity(0.16), location: 0.42),
+                                .init(color: Color.purple.opacity(0.14), location: 0.68),
+                                .init(color: Color.orange.opacity(0.10), location: 1)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                }
+        }
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(.white.opacity(0.18), lineWidth: 1)
+                .strokeBorder(
+                    LinearGradient(
+                        colors: [.white.opacity(0.32), .white.opacity(0.08)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 1
+                )
         )
         .background(
             GeometryReader { geo in

@@ -64,11 +64,14 @@ private struct ProcessesView: View {
                         Text(sort.rawValue).tag(sort)
                     }
                 }
+                .pickerStyle(.menu)
+                .controlSize(.small)
                 .frame(width: 105)
             }
 
             HStack {
                 Text("Process")
+                    .padding(.leading, 30)
                 Spacer()
                 Text("CPU")
                     .frame(width: 48, alignment: .trailing)
@@ -87,7 +90,10 @@ private struct ProcessesView: View {
                         }
                     }
                 }
+                .frame(maxWidth: .infinity, alignment: .top)
             }
+            .defaultScrollAnchor(.top)
+            .frame(maxHeight: .infinity, alignment: .top)
             .overlay {
                 if service.items.isEmpty {
                     ContentUnavailableView(
@@ -98,6 +104,7 @@ private struct ProcessesView: View {
                 }
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .alert("Could Not Stop Process", isPresented: Binding(
             get: { errorMessage != nil },
             set: { if !$0 { errorMessage = nil } }
@@ -132,7 +139,8 @@ private struct ProcessRow: View {
             VStack(alignment: .leading, spacing: 1) {
                 Text(item.name)
                     .lineLimit(1)
-                Text("PID (item.pid)")
+                    .help(item.name)
+                Text("PID \(item.pid)")
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
             }
@@ -154,6 +162,7 @@ private struct ProcessRow: View {
                     .frame(width: 24, height: 24)
             }
             .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
             .disabled(item.isProtected)
             .help(item.isProtected ? "Protected system process" : "Process actions")
         }
