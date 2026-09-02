@@ -35,7 +35,6 @@ struct RootOverlayView: View {
                                 withAnimation(.spring(response: 0.28, dampingFraction: 0.86)) {
                                     state.isExpanded.toggle()
                                 }
-                                state.metrics.setFastMode(state.isExpanded)
                             }
                             chipWasDragged = false
                         }
@@ -64,25 +63,7 @@ struct RootOverlayView: View {
             }
         }
         .padding(8)
-        .background {
-            let shape = RoundedRectangle(cornerRadius: 16, style: .continuous)
-            shape
-                .fill(.ultraThinMaterial)
-                .overlay {
-                    shape.fill(
-                        LinearGradient(
-                            stops: [
-                                .init(color: Color.blue.opacity(0.20), location: 0),
-                                .init(color: Color.indigo.opacity(0.16), location: 0.42),
-                                .init(color: Color.purple.opacity(0.14), location: 0.68),
-                                .init(color: Color.orange.opacity(0.10), location: 1)
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                }
-        }
+        .background { PanelBackground(preferences: state.preferences) }
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .strokeBorder(
@@ -101,6 +82,39 @@ struct RootOverlayView: View {
         )
         .onPreferenceChange(SizePreferenceKey.self) { size in
             onSizeChange?(size)
+        }
+    }
+}
+
+private struct PanelBackground: View {
+    @ObservedObject var preferences: PreferencesService
+
+    var body: some View {
+        let shape = RoundedRectangle(cornerRadius: 16, style: .continuous)
+        shape
+            .fill(.ultraThinMaterial)
+            .overlay {
+                shape.fill(
+                    LinearGradient(
+                        colors: gradientColors,
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                    .opacity(preferences.tintStrength)
+                )
+            }
+    }
+
+    private var gradientColors: [Color] {
+        switch preferences.appearance {
+        case .ocean:
+            [.blue, .indigo, .purple, .orange.opacity(0.7)]
+        case .aurora:
+            [.green, .teal, .blue, .purple]
+        case .sunset:
+            [.orange, .pink, .purple, .indigo]
+        case .graphite:
+            [.gray, .black, .gray.opacity(0.7)]
         }
     }
 }

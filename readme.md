@@ -12,12 +12,15 @@ The project takes inspiration from the convenience of tools such as CleanMyMac, 
 - **Always within reach** — The floating panel is pinned to the top-right corner, stays available across Spaces and full-screen apps, and can be dragged elsewhere.
 - **Process inspector** — Expand PulseBar to view the apps and background processes using the most CPU or memory.
 - **Search and sorting** — Find a process by name or PID and sort the list by resource usage.
+- **Performance history** — Explore rolling five-minute CPU and memory charts with live percentages.
 - **Process control** — Quit or force-stop an unresponsive process directly from the panel. Critical macOS processes and PulseBar itself are protected.
 - **Memory relief** — Close selected applications, clear URL cache data, and optionally ask macOS to purge inactive memory.
 - **Disk cleanup** — Scan user caches, logs, Trash, Xcode DerivedData, and large files before choosing what to remove.
 - **Open at login** — Keep PulseBar ready after signing in to your Mac.
 - **Lightweight by design** — Native Swift, SwiftUI, and AppKit with adaptive sampling intervals and slower updates while Low Power Mode is enabled.
-- **Native macOS appearance** — A translucent material, compact layout, rounded corners, and subtle animations help the overlay blend into the desktop.
+- **Configurable updates** — Choose separate refresh intervals for system metrics and the process list; Low Power Mode keeps sampling at two seconds or slower.
+- **Customizable appearance** — Select Ocean, Aurora, Sunset, or Graphite gradients and adjust the tint strength over the native translucent material.
+- **Native macOS appearance** — A compact layout, rounded corners, background blur, and subtle animations help the overlay blend into the desktop.
 
 ## How to use PulseBar
 
@@ -25,9 +28,11 @@ The project takes inspiration from the convenience of tools such as CleanMyMac, 
 2. Read the live CPU and memory values directly from the compact view.
 3. Click the monitor to open the expanded panel.
 4. Use **Processes** to inspect high-usage apps and services, search by name or PID, and quit a process when needed.
-5. Use **Memory** to select applications to close and request memory relief.
-6. Use **Clean** to scan removable files, review the categories and sizes, then clean only the items you select.
-7. Drag the panel to reposition it. Right-click it to enable **Open at Login**, reset its position, or quit PulseBar.
+5. Use **History** to view rolling CPU and memory charts for the last five minutes.
+6. Use **Memory** to select applications to close and request memory relief.
+7. Use **Clean** to scan removable files, review the categories and sizes, then clean only the items you select.
+8. Select the gear button to configure refresh intervals, gradient palette, and tint strength.
+9. Drag the panel to reposition it. Right-click it to enable **Open at Login**, reset its position, or quit PulseBar.
 
 Stopping a process can cause unsaved work to be lost. Try a normal quit first and use force stop only when an app is unresponsive. Review cleanup selections carefully because removed files are not guaranteed to be recoverable.
 
@@ -93,14 +98,12 @@ Sources/PulseBar/
 ├── Overlay/      Floating panel positioning and SwiftUI root view
 ├── Services/     Metrics, process, memory, disk, and login-item services
 ├── AppDelegate.swift
-└── main.swift
+└── PulseBarEntry.swift
 ```
 
 ## Roadmap
 
-- Complete and polish the expanded Processes, Memory, and Clean views
-- Add CPU and memory history charts
-- Add configurable refresh intervals and overlay appearance
+- Continue polishing the expanded Processes, History, Memory, and Clean views
 - Improve multi-display positioning and saved placement
 - Package, sign, notarize, and distribute PulseBar as a macOS app
 - Add automated tests for samplers and cleanup safety rules

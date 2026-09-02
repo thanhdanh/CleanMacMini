@@ -17,21 +17,39 @@ final class ProcessService: ObservableObject {
     private let sampler = ProcessSampler()
     private var timer: Timer?
     private var queryTask: Task<Void, Never>?
+    private var refreshInterval: TimeInterval
+    private var preferencesCancellable: AnyCancellable?
 
     private static let protectedNames: Set<String> = [
         "kernel_task", "launchd", "WindowServer", "loginwindow", "cfprefsd",
         "PulseBar", "syspolicyd", "runningboardd", "logd"
     ]
 
+    init(preferences: PreferencesService) {
+        refreshInterval = preferences.processInterval.rawValue
+        preferencesCancellable = preferences.$processInterval
+            .dropFirst()
+            .sink { [weak self] interval in
+                guard let self else { return }
+                self.refreshInterval = interval.rawValue
+                if self.timer != nil {
+                    self.start()
+                }
+            }
+    }
+
     func start() {
         stop()
         Task { await refresh() }
-        let timer = Timer(timeInterval: 2.0, repeats: true) { [weak self] _ in
+        let interval = ProcessInfo.processInfo.isLowPowerModeEnabled
+            ? max(2, refreshInterval)
+            : refreshInterval
+        let timer = Timer(timeInterval: interval, repeats: true) { [weak self] _ in
             Task { @MainActor in
                 await self?.refresh()
             }
         }
-        timer.tolerance = 0.4
+        timer.tolerance = interval * 0.2
         RunLoop.main.add(timer, forMode: .common)
         self.timer = timer
     }

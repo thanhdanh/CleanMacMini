@@ -1,4 +1,5 @@
 import AppKit
+import Charts
 import SwiftUI
 
 private enum ProcessTableLayout {
@@ -14,6 +15,7 @@ struct ExpandedPanelView: View {
     @ObservedObject var state: AppState
     var onDragChange: (() -> Void)?
     var onDragEnd: (() -> Void)?
+    @State private var showsSettings = false
 
     var body: some View {
         VStack(spacing: 10) {
@@ -29,32 +31,244 @@ struct ExpandedPanelView: View {
                 )
                 .help("Drag to move PulseBar")
 
-            Picker("Section", selection: $state.selectedTab) {
-                ForEach(AppState.Tab.allCases) { tab in
-                    Text(tab.rawValue).tag(tab)
+            HStack(spacing: 7) {
+                if showsSettings {
+                    Label("Settings", systemImage: "gearshape.fill")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.leading, 4)
+                } else {
+                    Picker("Section", selection: $state.selectedTab) {
+                        ForEach(AppState.Tab.allCases) { tab in
+                            Text(tab.rawValue).tag(tab)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
                 }
+
+                Button {
+                    withAnimation(.easeInOut(duration: 0.18)) {
+                        showsSettings.toggle()
+                    }
+                } label: {
+                    Image(systemName: showsSettings ? "xmark" : "gearshape")
+                        .frame(width: 20, height: 20)
+                }
+                .buttonStyle(.borderless)
+                .help(showsSettings ? "Close settings" : "Overlay settings")
             }
-            .pickerStyle(.segmented)
-            .labelsHidden()
 
             Group {
-                switch state.selectedTab {
-                case .processes:
-                    ProcessesView(service: state.processes)
-                case .memory:
-                    MemoryView(
-                        metrics: state.metrics.snapshot,
-                        processService: state.processes,
-                        reliefService: state.memory
-                    )
-                case .clean:
-                    CleanView(service: state.disk)
+                if showsSettings {
+                    SettingsView(preferences: state.preferences)
+                } else {
+                    switch state.selectedTab {
+                    case .processes:
+                        ProcessesView(service: state.processes)
+                    case .history:
+                        HistoryView(service: state.metrics)
+                    case .memory:
+                        MemoryView(
+                            metrics: state.metrics.snapshot,
+                            processService: state.processes,
+                            reliefService: state.memory
+                        )
+                    case .clean:
+                        CleanView(service: state.disk)
+                    }
                 }
             }
             .frame(width: 360, height: 360)
         }
         .padding(.horizontal, 4)
         .padding(.bottom, 4)
+    }
+}
+
+private struct HistoryView: View {
+    @ObservedObject var service: MetricsService
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Performance history")
+                        .font(.headline)
+                    Text("Rolling five-minute window")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Text("\(service.history.count) samples")
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(.secondary)
+            }
+
+            MetricChartCard(
+                title: "CPU",
+                currentValue: service.snapshot.cpuPercent,
+                color: .green,
+                points: service.history,
+                value: \.cpuPercent
+            )
+
+            MetricChartCard(
+                title: "Memory",
+                currentValue: service.snapshot.memoryUsedRatio * 100,
+                color: .purple,
+                points: service.history,
+                value: \.memoryPercent
+            )
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+    }
+}
+
+private struct MetricChartCard: View {
+    let title: String
+    let currentValue: Double
+    let color: Color
+    let points: [MetricHistoryPoint]
+    let value: KeyPath<MetricHistoryPoint, Double>
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            HStack {
+                Text(title)
+                    .font(.caption.weight(.semibold))
+                Spacer()
+                Text(String(format: "%.1f%%", currentValue))
+                    .font(.caption.monospacedDigit().weight(.semibold))
+                    .foregroundStyle(color)
+            }
+
+            Chart(points) { point in
+                AreaMark(
+                    x: .value("Time", point.timestamp),
+                    y: .value(title, point[keyPath: value])
+                )
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [color.opacity(0.3), color.opacity(0.02)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+
+                LineMark(
+                    x: .value("Time", point.timestamp),
+                    y: .value(title, point[keyPath: value])
+                )
+                .foregroundStyle(color)
+                .lineStyle(StrokeStyle(lineWidth: 1.6, lineCap: .round, lineJoin: .round))
+            }
+            .chartYScale(domain: 0...100)
+            .chartXAxis(.hidden)
+            .chartYAxis {
+                AxisMarks(position: .leading, values: [0, 50, 100]) {
+                    AxisGridLine().foregroundStyle(.white.opacity(0.08))
+                    AxisValueLabel()
+                }
+            }
+            .frame(height: 116)
+            .overlay {
+                if points.count < 2 {
+                    Text("Collecting samples…")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .padding(10)
+        .background(.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 10))
+    }
+}
+
+private struct SettingsView: View {
+    @ObservedObject var preferences: PreferencesService
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            settingsGroup("Refresh intervals", symbol: "timer") {
+                settingPicker("System metrics", selection: $preferences.metricsInterval)
+                settingPicker("Processes", selection: $preferences.processInterval)
+
+                Text("Low Power Mode uses an interval of at least 2 seconds.")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+
+            settingsGroup("Overlay appearance", symbol: "paintpalette") {
+                HStack {
+                    Text("Gradient")
+                    Spacer()
+                    Picker("Gradient", selection: $preferences.appearance) {
+                        ForEach(OverlayAppearance.allCases) { appearance in
+                            Text(appearance.rawValue).tag(appearance)
+                        }
+                    }
+                    .labelsHidden()
+                    .pickerStyle(.menu)
+                    .frame(width: 130)
+                }
+
+                HStack {
+                    Text("Tint strength")
+                    Slider(value: $preferences.tintStrength, in: 0...0.45)
+                    Text("\(Int(preferences.tintStrength / 0.45 * 100))%")
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                        .frame(width: 34, alignment: .trailing)
+                }
+            }
+
+            Spacer()
+
+            HStack {
+                Text("Preferences are saved automatically.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Button("Reset") { preferences.reset() }
+            }
+        }
+        .padding(.top, 2)
+    }
+
+    private func settingsGroup<Content: View>(
+        _ title: String,
+        symbol: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        GroupBox {
+            VStack(alignment: .leading, spacing: 10) {
+                content()
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.top, 3)
+        } label: {
+            Label(title, systemImage: symbol)
+                .font(.caption.weight(.semibold))
+        }
+    }
+
+    private func settingPicker(
+        _ label: String,
+        selection: Binding<RefreshInterval>
+    ) -> some View {
+        HStack {
+            Text(label)
+            Spacer()
+            Picker(label, selection: selection) {
+                ForEach(RefreshInterval.allCases) { interval in
+                    Text(interval.label).tag(interval)
+                }
+            }
+            .labelsHidden()
+            .pickerStyle(.menu)
+            .frame(width: 130)
+        }
     }
 }
 

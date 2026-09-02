@@ -4,10 +4,25 @@ import Foundation
 @MainActor
 final class MetricsService: ObservableObject {
     @Published private(set) var snapshot = SystemMetrics()
+    @Published private(set) var history: [MetricHistoryPoint] = []
 
     private let sampler = MetricsSampler()
     private var timer: Timer?
-    private var fastMode = false
+    private var refreshInterval: TimeInterval
+    private var preferencesCancellable: AnyCancellable?
+
+    init(preferences: PreferencesService) {
+        refreshInterval = preferences.metricsInterval.rawValue
+        preferencesCancellable = preferences.$metricsInterval
+            .dropFirst()
+            .sink { [weak self] interval in
+                guard let self else { return }
+                self.refreshInterval = interval.rawValue
+                if self.timer != nil {
+                    self.schedule()
+                }
+            }
+    }
 
     func start() {
         stop()
@@ -20,19 +35,11 @@ final class MetricsService: ObservableObject {
         timer = nil
     }
 
-    func setFastMode(_ enabled: Bool) {
-        guard fastMode != enabled else { return }
-        fastMode = enabled
-        if timer != nil {
-            schedule()
-        }
-    }
-
     private var interval: TimeInterval {
         if ProcessInfo.processInfo.isLowPowerModeEnabled {
-            return 2.0
+            return max(2, refreshInterval)
         }
-        return fastMode ? 0.8 : 1.2
+        return refreshInterval
     }
 
     private func schedule() {
@@ -53,5 +60,13 @@ final class MetricsService: ObservableObject {
         if next != snapshot {
             snapshot = next
         }
+        let point = MetricHistoryPoint(
+            timestamp: Date(),
+            cpuPercent: next.cpuPercent,
+            memoryPercent: next.memoryUsedRatio * 100
+        )
+        history.append(point)
+        let cutoff = point.timestamp.addingTimeInterval(-300)
+        history.removeAll { $0.timestamp < cutoff }
     }
 }

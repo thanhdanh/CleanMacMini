@@ -38,16 +38,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 final class AppState: ObservableObject {
     enum Tab: String, CaseIterable, Identifiable {
         case processes = "Processes"
+        case history = "History"
         case memory = "Memory"
         case clean = "Clean"
         var id: String { rawValue }
     }
 
-    let metrics = MetricsService()
-    let processes = ProcessService()
-    let memory = MemoryReliefService()
-    let disk = DiskCleanerService()
-    let loginItem = LoginItemService()
+    let preferences: PreferencesService
+    let metrics: MetricsService
+    let processes: ProcessService
+    let memory: MemoryReliefService
+    let disk: DiskCleanerService
+    let loginItem: LoginItemService
 
     @Published var isExpanded = false {
         didSet {
@@ -55,11 +57,20 @@ final class AppState: ObservableObject {
                 processes.start()
             } else {
                 processes.stop()
-                metrics.setFastMode(false)
             }
         }
     }
 
     @Published var selectedTab: Tab = .processes
     @Published var userMovedOverlay = false
+
+    init() {
+        let preferences = PreferencesService()
+        self.preferences = preferences
+        metrics = MetricsService(preferences: preferences)
+        processes = ProcessService(preferences: preferences)
+        memory = MemoryReliefService()
+        disk = DiskCleanerService()
+        loginItem = LoginItemService()
+    }
 }

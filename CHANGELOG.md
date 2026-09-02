@@ -11,6 +11,14 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 - Add packaging, signing, notarization, and release automation.
 
+## [0.4.0] - 2026-09-02
+
+### Added
+
+- Configurable system-metric and process refresh intervals with persisted preferences.
+- Configurable overlay gradient palette and tint strength.
+- Rolling five-minute CPU and memory history charts.
+
 ## [0.3.4] - 2026-09-02
 
 ### Fixed
@@ -91,7 +99,8 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 - Login item management.
 - Project documentation and source-build instructions.
 
-[Unreleased]: https://github.com/thanhdanh/CleanMacMini/compare/v0.3.4...HEAD
+[Unreleased]: https://github.com/thanhdanh/CleanMacMini/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/thanhdanh/CleanMacMini/compare/v0.3.4...v0.4.0
 [0.3.4]: https://github.com/thanhdanh/CleanMacMini/compare/v0.3.3...v0.3.4
 [0.3.3]: https://github.com/thanhdanh/CleanMacMini/compare/v0.3.2...v0.3.3
 [0.3.2]: https://github.com/thanhdanh/CleanMacMini/compare/v0.3.1...v0.3.2
