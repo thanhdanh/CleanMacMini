@@ -7,7 +7,7 @@ All notable changes to PulseBar are documented in this file. PulseBar follows
 
 ### Added
 
-- Compact, translucent CPU and RAM overlay showing used and total memory, anchored near the top-right of the active display.
+- Compact, translucent CPU and RAM overlay with a memory-usage ring and shortened used/total values, anchored near the top-right of the active display.
 - Expandable Processes, Memory, and Clean panels with a configurable gradient appearance.
 - Live CPU and memory sampling with rolling five-minute history charts.
 - Grouped application processes, background-service visibility, search, resource sorting, and protected quit or force-stop actions.

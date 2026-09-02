@@ -11,11 +11,7 @@ struct ChipView: View {
             Divider()
                 .frame(height: 18)
 
-            metric(
-                symbol: "memorychip",
-                label: "RAM",
-                value: "\(ByteFormat.shortGB(metrics.memoryUsedBytes)) / \(ByteFormat.shortGB(metrics.memoryTotalBytes))"
-            )
+            memoryMetric
 
             Image(systemName: expanded ? "chevron.up" : "chevron.down")
                 .font(.system(size: 10, weight: .semibold))
@@ -46,11 +42,49 @@ struct ChipView: View {
         }
     }
 
+    private var memoryMetric: some View {
+        HStack(spacing: 5) {
+            Image(systemName: "memorychip")
+                .foregroundStyle(accentColor)
+            Text("RAM")
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+            MemoryUsageRing(ratio: metrics.memoryUsedRatio, color: accentColor)
+            Text(ByteFormat.compactMemoryUsage(
+                used: metrics.memoryUsedBytes,
+                total: metrics.memoryTotalBytes
+            ))
+            .monospacedDigit()
+            .lineLimit(1)
+            .fixedSize(horizontal: true, vertical: false)
+            .layoutPriority(2)
+        }
+    }
+
     private var accentColor: Color {
         switch metrics.pressure {
         case .normal: .green
         case .warning: .orange
         case .critical: .red
         }
+    }
+}
+
+private struct MemoryUsageRing: View {
+    let ratio: Double
+    let color: Color
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .stroke(.secondary.opacity(0.25), lineWidth: 2)
+            Circle()
+                .trim(from: 0, to: min(max(ratio, 0), 1))
+                .stroke(color, style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                .rotationEffect(.degrees(-90))
+        }
+        .frame(width: 13, height: 13)
+        .animation(.easeOut(duration: 0.2), value: ratio)
+        .accessibilityHidden(true)
     }
 }

@@ -20,4 +20,16 @@ enum ByteFormat {
         }
         return String(format: "%.1f GB", gb)
     }
+
+    static func compactMemoryUsage(used: UInt64, total: UInt64) -> String {
+        "\(compactGigabytes(used))/\(compactGigabytes(total))G"
+    }
+
+    private static func compactGigabytes(_ bytes: UInt64) -> String {
+        let gigabytes = Double(bytes) / 1_073_741_824
+        if gigabytes >= 10 || abs(gigabytes.rounded() - gigabytes) < 0.05 {
+            return String(format: "%.0f", gigabytes)
+        }
+        return String(format: "%.1f", gigabytes)
+    }
 }
