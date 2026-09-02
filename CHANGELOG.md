@@ -11,6 +11,12 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 - Add packaging, signing, notarization, and release automation.
 
+## [0.3.1] - 2026-09-02
+
+### Fixed
+
+- Prevent CPU and RAM values from being truncated in the compact view.
+
 ## [0.3.0] - 2026-09-02
 
 ### Changed
@@ -67,7 +73,8 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 - Login item management.
 - Project documentation and source-build instructions.
 
-[Unreleased]: https://github.com/thanhdanh/CleanMacMini/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/thanhdanh/CleanMacMini/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/thanhdanh/CleanMacMini/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/thanhdanh/CleanMacMini/compare/v0.2.3...v0.3.0
 [0.2.3]: https://github.com/thanhdanh/CleanMacMini/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/thanhdanh/CleanMacMini/compare/v0.2.1...v0.2.2

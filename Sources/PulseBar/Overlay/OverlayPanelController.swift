@@ -86,7 +86,7 @@ final class OverlayPanelController: NSObject {
     }
 
     private func applyContentSize(_ size: NSSize) {
-        let padded = NSSize(width: max(280, ceil(size.width)), height: max(40, ceil(size.height)))
+        let padded = NSSize(width: max(320, ceil(size.width)), height: max(40, ceil(size.height)))
         var frame = panel.frame
         let top = frame.maxY
         let right = frame.maxX

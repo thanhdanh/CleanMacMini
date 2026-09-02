@@ -24,6 +24,7 @@ struct ChipView: View {
         .font(.system(size: 12, weight: .medium, design: .rounded))
         .padding(.horizontal, 8)
         .frame(height: 28)
+        .fixedSize(horizontal: true, vertical: false)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(
             "CPU \(Int(metrics.cpuPercent)) percent, memory \(ByteFormat.string(metrics.memoryUsedBytes)) used"
@@ -36,8 +37,12 @@ struct ChipView: View {
                 .foregroundStyle(accentColor)
             Text(label)
                 .foregroundStyle(.secondary)
+                .lineLimit(1)
             Text(value)
                 .monospacedDigit()
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
+                .layoutPriority(2)
         }
     }
 
