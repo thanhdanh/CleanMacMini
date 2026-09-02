@@ -3,9 +3,23 @@ import SwiftUI
 
 struct ExpandedPanelView: View {
     @ObservedObject var state: AppState
+    var onDragChange: (() -> Void)?
+    var onDragEnd: (() -> Void)?
 
     var body: some View {
         VStack(spacing: 10) {
+            Capsule()
+                .fill(.secondary.opacity(0.55))
+                .frame(width: 36, height: 4)
+                .frame(maxWidth: .infinity)
+                .contentShape(Rectangle())
+                .gesture(
+                    DragGesture(minimumDistance: 2, coordinateSpace: .global)
+                        .onChanged { _ in onDragChange?() }
+                        .onEnded { _ in onDragEnd?() }
+                )
+                .help("Drag to move PulseBar")
+
             Picker("Section", selection: $state.selectedTab) {
                 ForEach(AppState.Tab.allCases) { tab in
                     Text(tab.rawValue).tag(tab)

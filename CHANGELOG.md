@@ -11,6 +11,12 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 - Add packaging, signing, notarization, and release automation.
 
+## [0.2.3] - 2026-09-02
+
+### Fixed
+
+- Add a dedicated drag handle to move PulseBar while its expanded panel is open.
+
 ## [0.2.2] - 2026-09-02
 
 ### Fixed
@@ -49,7 +55,8 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 - Login item management.
 - Project documentation and source-build instructions.
 
-[Unreleased]: https://github.com/thanhdanh/CleanMacMini/compare/v0.2.2...HEAD
+[Unreleased]: https://github.com/thanhdanh/CleanMacMini/compare/v0.2.3...HEAD
+[0.2.3]: https://github.com/thanhdanh/CleanMacMini/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/thanhdanh/CleanMacMini/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/thanhdanh/CleanMacMini/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/thanhdanh/CleanMacMini/compare/v0.1.0...v0.2.0

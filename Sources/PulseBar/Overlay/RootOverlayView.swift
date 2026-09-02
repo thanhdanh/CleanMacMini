@@ -55,7 +55,11 @@ struct RootOverlayView: View {
                 }
 
             if state.isExpanded {
-                ExpandedPanelView(state: state)
+                ExpandedPanelView(
+                    state: state,
+                    onDragChange: onDragChange,
+                    onDragEnd: onDragEnd
+                )
                     .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
