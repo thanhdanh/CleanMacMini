@@ -37,12 +37,17 @@ struct ExpandedPanelView: View {
             .frame(maxWidth: .infinity)
             .frame(height: 26)
             .contentShape(Rectangle())
-            .gesture(
+            .simultaneousGesture(
                 DragGesture(minimumDistance: 2, coordinateSpace: .global)
                     .onChanged { _ in onDragChange?() }
                     .onEnded { _ in onDragEnd?() }
             )
-            .help("Drag to move PulseBar")
+            .onTapGesture(count: 2) {
+                withAnimation(OverlayMotion.resize) {
+                    state.isExpanded = false
+                }
+            }
+            .help("Double-click to collapse. Drag to move PulseBar.")
 
             HStack(spacing: 7) {
                 if showsSettings {
@@ -397,6 +402,8 @@ private struct MemoryView: View {
     @ObservedObject var reliefService: MemoryReliefService
     @State private var selectedPIDs: Set<pid_t> = []
     @State private var showsAllConsumers = true
+    @State private var showsQuitConfirmation = false
+    @State private var appQuitMessage: String?
 
     private var metrics: SystemMetrics {
         metricsService.snapshot
@@ -412,6 +419,10 @@ private struct MemoryView: View {
         showsAllConsumers ? processService.memoryConsumers : apps
     }
 
+    private var selectedApps: [ProcessInfoItem] {
+        apps.filter { selectedPIDs.contains($0.pid) }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
@@ -425,7 +436,7 @@ private struct MemoryView: View {
                 Spacer()
                 VStack(alignment: .trailing, spacing: 4) {
                     PressureBadge(pressure: metrics.pressure)
-                    Text("\(ByteFormat.string(metrics.reclaimableBytes)) reclaimable")
+                    Text("\(ByteFormat.string(metrics.freeableBytes)) freeable")
                         .font(.caption2.monospacedDigit())
                         .foregroundStyle(.secondary)
                 }
@@ -494,22 +505,31 @@ private struct MemoryView: View {
                 }
             }
 
-            Button {
-                let selected = apps.filter { selectedPIDs.contains($0.pid) }
-                Task {
-                    await reliefService.freeUp(metrics: metrics, quitApps: selected)
-                    selectedPIDs.removeAll()
+            HStack(spacing: 7) {
+                Button {
+                    Task {
+                        await reliefService.freeUp(metrics: metrics)
+                    }
+                } label: {
+                    HStack {
+                        if reliefService.isWorking { ProgressView().controlSize(.small) }
+                        Text(freeUpButtonTitle)
+                    }
+                    .frame(maxWidth: .infinity)
                 }
-            } label: {
-                HStack {
-                    if reliefService.isWorking { ProgressView().controlSize(.small) }
-                    Text(freeUpButtonTitle)
+                .buttonStyle(.borderedProminent)
+                .disabled(reliefService.isWorking)
+                .help("Free up to this estimated amount of cached memory without quitting apps")
+
+                Button {
+                    showsQuitConfirmation = true
+                } label: {
+                    Label(quitAppsButtonTitle, systemImage: "xmark.app")
                 }
-                .frame(maxWidth: .infinity)
+                .buttonStyle(.bordered)
+                .disabled(selectedApps.isEmpty || reliefService.isWorking)
+                .help("Quit the selected applications")
             }
-            .buttonStyle(.borderedProminent)
-            .disabled(reliefService.isWorking)
-            .help("Purge inactive memory and close any selected apps")
 
             if let message = reliefService.lastMessage {
                 Text(message)
@@ -517,17 +537,57 @@ private struct MemoryView: View {
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
+
+            if let appQuitMessage {
+                Text(appQuitMessage)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .confirmationDialog(
+            "Quit \(selectedApps.count) selected \(selectedApps.count == 1 ? "app" : "apps")?",
+            isPresented: $showsQuitConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Quit Selected Apps", role: .destructive, action: quitSelectedApps)
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Unsaved work in the selected apps may be lost.")
         }
     }
 
     private var freeUpButtonTitle: String {
         if reliefService.isWorking { return "Freeing Up Memory…" }
-        if selectedPIDs.isEmpty {
-            return metrics.reclaimableBytes > 0
-                ? "Free Up \(ByteFormat.string(metrics.reclaimableBytes))"
-                : "Free Up Memory"
+        return metrics.freeableBytes > 0
+            ? "Free Up \(ByteFormat.string(metrics.freeableBytes))"
+            : "Free Up Memory"
+    }
+
+    private var quitAppsButtonTitle: String {
+        selectedApps.isEmpty ? "Quit Apps" : "Quit \(selectedApps.count)"
+    }
+
+    private func quitSelectedApps() {
+        let targets = selectedApps
+        var failures: [String] = []
+        var quitCount = 0
+
+        for app in targets {
+            if let error = processService.quit(app, force: false) {
+                failures.append(app.name)
+                appQuitMessage = error
+            } else {
+                quitCount += 1
+                selectedPIDs.remove(app.pid)
+            }
         }
-        return "Free Up Memory · Close \(selectedPIDs.count)"
+
+        if failures.isEmpty {
+            appQuitMessage = "Asked \(quitCount) \(quitCount == 1 ? "app" : "apps") to quit."
+        } else {
+            appQuitMessage = "Quit \(quitCount); couldn't quit \(failures.joined(separator: ", "))."
+        }
     }
 }
 
@@ -634,7 +694,7 @@ private struct MemoryConsumerRow: View {
         .padding(.horizontal, 5)
         .padding(.vertical, 4)
         .background(.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 7))
-        .help(canClose ? "Select to close this app when freeing memory" : "Background or protected process")
+        .help(canClose ? "Select this app for the separate Quit Apps action" : "Background or protected process")
     }
 
     private var canClose: Bool { item.isApp && !item.isProtected }

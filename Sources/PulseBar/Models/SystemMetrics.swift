@@ -26,11 +26,12 @@ struct SystemMetrics: Equatable {
         return min(1, Double(memoryUsedBytes) / Double(memoryTotalBytes))
     }
 
-    var reclaimableBytes: UInt64 {
-        inactiveBytes + purgeableBytes
+    var freeableBytes: UInt64 {
+        let fileBacked = min(memoryTotalBytes, externalBytes)
+        return fileBacked + min(memoryTotalBytes - fileBacked, purgeableBytes)
     }
 
     var cachedFilesBytes: UInt64 {
-        externalBytes + purgeableBytes
+        freeableBytes
     }
 }

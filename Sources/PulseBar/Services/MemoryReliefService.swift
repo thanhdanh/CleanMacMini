@@ -8,18 +8,12 @@ final class MemoryReliefService: ObservableObject {
     @Published private(set) var lastMessage: String?
     @Published private(set) var lastFreedBytes: UInt64 = 0
 
-    func freeUp(metrics: SystemMetrics, quitApps: [ProcessInfoItem]) async {
+    func freeUp(metrics: SystemMetrics) async {
         guard !isWorking else { return }
         isWorking = true
         lastMessage = nil
         lastFreedBytes = 0
         let before = metrics.memoryUsedBytes
-
-        for item in quitApps where !item.isProtected {
-            if let app = NSRunningApplication(processIdentifier: item.pid) {
-                _ = app.terminate()
-            }
-        }
 
         URLCache.shared.removeAllCachedResponses()
         await Task.yield()
@@ -39,7 +33,7 @@ final class MemoryReliefService: ObservableObject {
                 : "Memory was optimized. The used total may stay similar while macOS keeps helpful caches."
         } else {
             lastMessage = freed > 0
-                ? "Closed the selected apps and freed about \(ByteFormat.string(freed))."
+                ? "Freed about \(ByteFormat.string(freed)) without quitting apps."
                 : "Memory cleanup was cancelled or isn't available on this Mac."
         }
         isWorking = false

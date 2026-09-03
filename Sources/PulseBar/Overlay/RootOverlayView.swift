@@ -1,5 +1,9 @@
 import SwiftUI
 
+enum OverlayMotion {
+    static let resize = Animation.easeInOut(duration: 0.22)
+}
+
 struct SizePreferenceKey: PreferenceKey {
     static var defaultValue: CGSize = .zero
     static func reduce(value: inout CGSize, nextValue: () -> CGSize) {
@@ -13,32 +17,14 @@ struct RootOverlayView: View {
     var onDragChange: (() -> Void)?
     var onDragEnd: (() -> Void)?
     var onResetPosition: (() -> Void)?
-    @State private var chipWasDragged = false
 
     var body: some View {
-        VStack(spacing: 0) {
+        VStack(alignment: .trailing, spacing: 0) {
             LiveChipView(service: state.metrics, expanded: state.isExpanded)
                 .contentShape(Rectangle())
-                .gesture(
-                    DragGesture(minimumDistance: 0, coordinateSpace: .global)
-                        .onChanged { value in
-                            let distance = hypot(value.translation.width, value.translation.height)
-                            if distance >= 3 {
-                                chipWasDragged = true
-                                onDragChange?()
-                            }
-                        }
-                        .onEnded { _ in
-                            if chipWasDragged {
-                                onDragEnd?()
-                            } else {
-                                withAnimation(.spring(response: 0.28, dampingFraction: 0.86)) {
-                                    state.isExpanded.toggle()
-                                }
-                            }
-                            chipWasDragged = false
-                        }
-                )
+                .simultaneousGesture(headerDragGesture)
+                .onTapGesture(count: 2, perform: toggleExpanded)
+                .help("Double-click to \(state.isExpanded ? "collapse" : "expand"). Drag to move PulseBar.")
                 .contextMenu {
                     Toggle("Open at Login", isOn: Binding(
                         get: { state.loginItem.isEnabled },
@@ -59,7 +45,7 @@ struct RootOverlayView: View {
                     onDragChange: onDragChange,
                     onDragEnd: onDragEnd
                 )
-                    .transition(.opacity.combined(with: .move(edge: .top)))
+                    .transition(.identity)
             }
         }
         .padding(8)
@@ -80,27 +66,24 @@ struct RootOverlayView: View {
                 Color.clear.preference(key: SizePreferenceKey.self, value: geo.size)
             }
         )
-        .simultaneousGesture(expandedCornerDragGesture)
         .onPreferenceChange(SizePreferenceKey.self) { size in
             onSizeChange?(size)
         }
+        .animation(OverlayMotion.resize, value: state.isExpanded)
     }
 
-    private var expandedCornerDragGesture: some Gesture {
-        DragGesture(minimumDistance: 2, coordinateSpace: .local)
-            .onChanged { value in
-                guard isExpandedCornerDrag(value) else { return }
-                onDragChange?()
-            }
-            .onEnded { value in
-                guard isExpandedCornerDrag(value) else { return }
-                onDragEnd?()
-            }
+    private var headerDragGesture: some Gesture {
+        DragGesture(minimumDistance: 2, coordinateSpace: .global)
+            .onChanged { _ in onDragChange?() }
+            .onEnded { _ in onDragEnd?() }
     }
 
-    private func isExpandedCornerDrag(_ value: DragGesture.Value) -> Bool {
-        state.isExpanded && value.startLocation.x <= 80 && value.startLocation.y <= 48
+    private func toggleExpanded() {
+        withAnimation(OverlayMotion.resize) {
+            state.isExpanded.toggle()
+        }
     }
+
 }
 
 private struct LiveChipView: View {

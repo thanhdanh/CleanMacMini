@@ -15,6 +15,8 @@ final class OverlayPanelController: NSObject {
     private var dragStartMouseLocation: NSPoint?
     private var isUserDragging = false
     private var isProgrammaticMove = false
+    private var pendingContentSize: NSSize?
+    private var isContentResizeScheduled = false
 
     init(state: AppState) {
         self.state = state
@@ -80,8 +82,26 @@ final class OverlayPanelController: NSObject {
     }
 
     private func applyContentSize(_ size: NSSize) {
+        pendingContentSize = size
+        guard !isContentResizeScheduled else { return }
+
+        isContentResizeScheduled = true
+        DispatchQueue.main.async { [weak self] in
+            self?.flushPendingContentSize()
+        }
+    }
+
+    private func flushPendingContentSize() {
+        isContentResizeScheduled = false
+        guard let size = pendingContentSize else { return }
+        pendingContentSize = nil
+
         let padded = NSSize(width: max(320, ceil(size.width)), height: max(40, ceil(size.height)))
         var frame = panel.frame
+        guard abs(frame.width - padded.width) >= 0.5 || abs(frame.height - padded.height) >= 0.5 else {
+            return
+        }
+
         let top = frame.maxY
         let right = frame.maxX
         frame.size = padded
@@ -91,7 +111,10 @@ final class OverlayPanelController: NSObject {
             frame.origin = topRightOrigin(for: padded, on: screen)
         }
         performProgrammaticMove {
-            panel.setFrame(frame, display: true)
+            // SwiftUI produces several intermediate sizes during the transition.
+            // Avoid a synchronous redraw for every one and let AppKit composite the
+            // next frame as a single update instead.
+            panel.setFrame(frame, display: false)
         }
     }
 

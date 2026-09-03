@@ -68,16 +68,22 @@ final class ProcessService: ObservableObject {
         if let app = NSRunningApplication(processIdentifier: item.pid) {
             let ok = force ? app.forceTerminate() : app.terminate()
             if ok {
-                items.removeAll { $0.pid == item.pid }
+                remove(item)
                 return nil
             }
         }
         let signal = force ? SIGKILL : SIGTERM
         if kill(item.pid, signal) == 0 {
-            items.removeAll { $0.pid == item.pid }
+            remove(item)
             return nil
         }
         return "Could not stop \(item.name). You may not own this process."
+    }
+
+    private func remove(_ item: ProcessInfoItem) {
+        items.removeAll { $0.pid == item.pid }
+        applications.removeAll { $0.pid == item.pid }
+        memoryConsumers.removeAll { $0.pid == item.pid }
     }
 
     private func scheduleQueryRefresh() {
